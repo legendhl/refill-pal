@@ -140,6 +140,22 @@ test('首页：加载演示数据后给出「2 样该买了」和一张该买的
   assert.equal(home.data.hasItems, true);
 });
 
+test('首页宫格：已用完的物品不重复显示两次「已用完」', async () => {
+  const { stub, app } = setup();
+  const home = mp.loadPage('pages/home/home', { wx: stub.wx, app });
+  await home.onShow();
+  await home.openSheet();
+  await stub.flush();
+
+  const paper = home.data.quickItems.find((c) => c.name === '抽纸');
+  assert.equal(paper.shortText, '已用完');
+  assert.equal(paper.showStock, false, '宫格第二行要藏起来，否则「已用完 / 已用完」');
+
+  const soap = home.data.quickItems.find((c) => c.name === '洗手液');
+  assert.equal(soap.showStock, true);
+  assert.equal(soap.stockText, '不到 1 瓶', '不足 1 个单位时说人话');
+});
+
 test('首页：点开「记一笔」加载常用物品，待补货的排最前', async () => {
   const { stub, app } = setup();
   const home = mp.loadPage('pages/home/home', { wx: stub.wx, app });
@@ -387,6 +403,35 @@ test('物品详情：加载视图与时间轴，长按记录可改', async () =>
     ['used_up', 'purchase', 'purchase']
   );
   assert.match(detail.data.basisText, /补货间隔/);
+});
+
+test('物品详情：已经用完时，「用完了」按钮变成禁用状态', async () => {
+  const { stub, app, api } = setup();
+  const list = await api.call('item', 'list');
+
+  const paper = list.data.items.find((i) => i.name === '抽纸');
+  const used = mp.loadPage('pages/item-detail/item-detail', {
+    wx: stub.wx,
+    app,
+    query: { id: paper._id }
+  });
+  await used.onShow();
+  await stub.flush();
+  assert.equal(used.data.usedUpDisabled, true);
+  assert.equal(used.data.usedUpLabel, '已经用完了');
+  assert.equal(used.data.emptyPhrase, '', '已用完就不该再挂一个看起来像未来的日期');
+
+  const bag = list.data.items.find((i) => i.name === '垃圾袋');
+  const alive = mp.loadPage('pages/item-detail/item-detail', {
+    wx: stub.wx,
+    app,
+    query: { id: bag._id }
+  });
+  await alive.onShow();
+  await stub.flush();
+  assert.equal(alive.data.usedUpDisabled, false);
+  assert.equal(alive.data.usedUpLabel, '用完了');
+  assert.match(alive.data.emptyPhrase, /^预计 .* 用完$/);
 });
 
 test('物品详情：盘点会校准库存，异常值要求二次确认', async () => {

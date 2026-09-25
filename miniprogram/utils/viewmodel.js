@@ -38,8 +38,10 @@ function levelStyle(level) {
 function stockText(view) {
   const unit = (view && view.unit) || '';
   const qty = format.formatQty((view && view.stock) || 0);
-  if (!view || view.eventCount === 0 && !view.baseQty) return '还没记过';
+  if (!view || (view.eventCount === 0 && !view.baseQty)) return '还没记过';
   if (view.stock <= 0) return '已用完';
+  // 「还剩 0.1 瓶」对人没有意义，这种时候说「不到 1 瓶」更有用
+  if (view.stock < 1) return `不到 1 ${unit}`.trim();
   return `还剩 ${qty} ${unit}`.trim();
 }
 
@@ -110,6 +112,8 @@ function cardOf(rawView, now = new Date()) {
     brand: view.brand || '',
     stock: view.stock,
     stockText: stockText(view),
+    // 已用完时 remainingText 已经说了「已用完约 N 天」，再显示一次「已用完」是废话
+    showStock: view.stock > 0,
     remainingText: remainingText(view),
     shortText: shortRemainingText(view),
     emptyAtText: emptyAtText(view, now),

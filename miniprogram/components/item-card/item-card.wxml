@@ -12,8 +12,10 @@
     </view>
     <view class="line2">
       <text class="remaining" style="color: {{card.color}}">{{card.remainingText}}</text>
-      <text class="dot" wx:if="{{card.stockText}}">·</text>
-      <text class="stock">{{card.stockText}}</text>
+      <block wx:if="{{card.showStock}}">
+        <text class="dot">·</text>
+        <text class="stock">{{card.stockText}}</text>
+      </block>
     </view>
     <view class="line3" wx:if="{{!compact}}">
       <text class="meta">{{card.rateText}}</text>

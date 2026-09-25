@@ -5,7 +5,7 @@
       <text class="badge" style="color: {{card.color}}; background: {{card.bg}}">{{card.badge}}</text>
     </view>
     <view class="head-stock" style="color: {{card.color}}">{{stockText}}</view>
-    <view class="head-remaining">{{remainingText}}<text wx:if="{{emptyAtText}}">（{{emptyAtText}}）</text></view>
+    <view class="head-remaining">{{remainingText}}<text wx:if="{{emptyPhrase}}">（{{emptyPhrase}}）</text></view>
 
     <view class="facts">
       <view class="fact">
@@ -31,7 +31,11 @@
   <view class="actions">
     <button class="btn btn-primary grow-btn" bindtap="buy">记一笔购买</button>
     <button class="btn btn-ghost grow-btn" bindtap="stocktake">盘点</button>
-    <button class="btn btn-plain grow-btn" bindtap="usedUp">用完了</button>
+    <button
+      class="btn btn-plain grow-btn {{usedUpDisabled ? 'btn-disabled' : ''}}"
+      bindtap="usedUp"
+      disabled="{{usedUpDisabled}}"
+    >{{usedUpLabel}}</button>
   </view>
 
   <view class="section-title">

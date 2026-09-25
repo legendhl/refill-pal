@@ -65,6 +65,28 @@ test('cardOf：数据不足时如实说「还不够数据估算」，不假装�
   assert.equal(card.emptyAtText, '');
 });
 
+test('stockText：不足 1 个单位时说「不到 1 瓶」，而不是「还剩 0.1 瓶」', () => {
+  const item = itemNow({ name: '洗手液', unit: '瓶', baseQty: 2, initEstimateDays: 45 });
+  const view = viewFrom(item, []);
+  assert.equal(view.stock, 2);
+  // 手动构造一个不足 1 的库存
+  const thin = Object.assign({}, view, { stock: 0.1 });
+  assert.equal(vm.stockText(thin), '不到 1 瓶');
+  assert.equal(vm.stockText(Object.assign({}, view, { stock: 1 })), '还剩 1 瓶');
+});
+
+test('cardOf：已用完时不再重复显示「已用完」', () => {
+  const item = makeItem({ name: '抽纸', unit: '包', baseAt: day('2026-08-01'), baseQty: 0 });
+  const events = [purchase(item._id, 10, '2026-08-01'), purchase(item._id, 10, '2026-08-21')];
+  const card = vm.cardOf(viewFrom(item, events), NOW);
+  assert.equal(card.stock <= 0, true);
+  assert.equal(card.stockText, '已用完');
+  assert.equal(card.showStock, false, '「已用完约 N 天 · 已用完」是废话，第二段要藏起来');
+
+  const fine = vm.cardOf(viewFrom(itemNow({ name: '洗衣液', unit: '瓶', baseQty: 3, initEstimateDays: 30 })), NOW);
+  assert.equal(fine.showStock, true, '还有货的时候要显示还剩多少');
+});
+
 test('stockText：新建但还没记过的物品不显示「已用完」', () => {
   const item = itemNow({ name: '新物品', baseQty: 0 });
   const card = vm.cardOf(viewFrom(item, []), NOW);

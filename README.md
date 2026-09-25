@@ -72,6 +72,7 @@ refillPal/
 | `npm run check` | 结构校验：页面完整性、组件路径、JS 语法、定时触发器 |
 | `npm run verify` | sync + check + test，提交前跑这个 |
 | `npm run sync` | 把 `cloudfunctions/_shared/` 复制到各云函数（改了共享代码后必跑） |
+| `node test-utils/e2e-screenshots.js` | 驱动微信开发者工具跑一遍真机模拟器并截图（需要开启工具的服务端口） |
 
 ## 两个关键设计
 

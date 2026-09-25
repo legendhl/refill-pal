@@ -78,10 +78,15 @@ page {
   box-shadow: 0 8rpx 24rpx rgba(255, 122, 69, 0.32);
 }
 
+/* 微信给 disabled 的 button 套了一层默认灰底（偏冷色，还会盖掉主题色），
+   这里用 !important 强制覆盖成暖灰底 + 看得清的字。 */
+.btn[disabled],
+.btn.btn-disabled,
 .btn-primary.btn-disabled {
-  background: #E8DDD6;
-  color: #FFFFFF;
+  background: #EFE7E1 !important;
+  color: #9C8B81 !important;
   box-shadow: none;
+  opacity: 1 !important;
 }
 
 .btn-ghost {

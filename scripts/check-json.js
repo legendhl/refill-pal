@@ -222,6 +222,13 @@ function checkWxmlBalance(source) {
   while (i < source.length) {
     const lt = source.indexOf('<', i);
     if (lt < 0) break;
+    // 只有 < 后面跟 字母 / / / ! 时才算标签开始；
+    // 文本节点里的 "<"（比如 {{a < b}}）不是标签，跳过。
+    // 注意：文本节点里出现裸的 < 本身有解析风险，所以模板里也不该这么写。
+    if (!/[A-Za-z/!]/.test(source[lt + 1] || '')) {
+      i = lt + 1;
+      continue;
+    }
     if (source.startsWith('<!--', lt)) {
       const end = source.indexOf('-->', lt);
       i = end < 0 ? source.length : end + 3;

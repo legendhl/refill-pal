@@ -5,3 +5,4 @@ project.private.config.json
 *.log
 .idea/
 .vscode/
+screenshots/

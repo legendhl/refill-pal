@@ -60,6 +60,11 @@ Page({
       stockText: vm.stockText(view),
       remainingText: vm.remainingText(view),
       emptyAtText: vm.emptyAtText(view),
+      // 已经用完了就不用再挂日期了，否则「（9 月 25 日）」看着像还没到
+      emptyPhrase: view.stock <= 0 ? '' : `预计 ${vm.emptyAtText(view)} 用完`,
+      // 库存已经是 0 时再点「用完了」不会给估算带来任何信息，直接禁用
+      usedUpDisabled: view.stock <= 0,
+      usedUpLabel: view.stock <= 0 ? '已经用完了' : '用完了',
       timeline: vm.toTimeline(res.data.events, view),
       historyCount: res.data.events.length
     });

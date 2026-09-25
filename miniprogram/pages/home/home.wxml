@@ -99,7 +99,7 @@
       >
         <view class="quick-name">{{item.name}}</view>
         <view class="quick-stock" style="color: {{item.color}}">{{item.shortText}}</view>
-        <view class="quick-unit">{{item.stockText}}</view>
+        <view class="quick-unit" wx:if="{{item.showStock}}">{{item.stockText}}</view>
       </view>
     </view>
     <view class="empty" wx:elif="{{quickLoading}}">正在加载常用物品…</view>
@@ -108,6 +108,8 @@
     <view class="empty" wx:if="{{keyword && !searchResults.length && !quickLoading}}">
       没找到「{{keyword}}」，去「物品」页新建一个吧
     </view>
+    <!-- 撤销条是固定定位的，给它让出位置，否则会盖住最后一排宫格 -->
+    <view class="sheet-spacer" style="height: {{undo ? 220 : 40}}rpx"></view>
   </scroll-view>
   <view class="safe-bottom"></view>
 </view>
