@@ -215,12 +215,14 @@ test('提醒设置：校验格式，且设置真正影响待补货判定', async
   const env = newEnv();
   const { dad } = await twoMemberFamily(env);
 
-  const saved = ok(await dad.family('updateSettings', { remindDays: 7, pushTime: '08:30' }));
+  const saved = ok(await dad.family('updateSettings', { remindDays: 7, pushTime: '08:00' }));
   assert.equal(saved.settings.remindDays, 7);
-  assert.equal(saved.settings.pushTime, '08:30');
+  assert.equal(saved.settings.pushTime, '08:00');
 
   expectCode(await dad.family('updateSettings', { remindDays: 99 }), 'INVALID_INPUT');
   expectCode(await dad.family('updateSettings', { pushTime: '8点' }), 'INVALID_INPUT');
+  // 定时器整点唤醒，非整点会导致「设了却永远不推」的静默失败，必须拒绝
+  expectCode(await dad.family('updateSettings', { pushTime: '08:30' }), 'INVALID_INPUT');
 
   // 今天建、素材显示还能用 20 天的物品
   const created = ok(await dad.item('create', { name: '抽纸', unit: '包', baseQty: 20, initEstimateDays: 20 }));

@@ -86,3 +86,8 @@
 .save {
   margin-top: 48rpx;
 }
+
+/* 与「我的」页保持一致的列表行样式 */
+.row-value {
+  font-size: 27rpx;
+}

@@ -158,6 +158,29 @@ cfDirs.forEach((name) => {
       /* 已报错 */
     }
   }
+  // 定时触发器与 openapi 权限：写错了不会报错，只会「静默不触发」，所以静态查一遍
+  const cfgPath = path.join(dir, 'config.json');
+  if (fs.existsSync(cfgPath)) {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+      (cfg.triggers || []).forEach((trigger, i) => {
+        if (trigger.type !== 'timer') {
+          fail(`云函数 ${name} 的触发器 #${i + 1} 类型应为 timer，实际 ${trigger.type}`);
+          return;
+        }
+        const fields = String(trigger.config || '').trim().split(/\s+/);
+        if (fields.length !== 7) {
+          fail(`云函数 ${name} 的定时 cron 必须是 7 位（秒 分 时 日 月 周 年），实际 ${fields.length} 位：${trigger.config}`);
+        }
+      });
+      if (cfg.permissions && cfg.permissions.openapi && !Array.isArray(cfg.permissions.openapi)) {
+        fail(`云函数 ${name} 的 permissions.openapi 必须是数组`);
+      }
+    } catch (e) {
+      fail(`云函数 ${name} 的 config.json 解析失败: ${e.message}`);
+    }
+  }
+
   const sharedCopy = path.join(dir, 'shared', 'core.js');
   if (!fs.existsSync(sharedCopy)) {
     fail(`云函数 ${name} 缺少 shared/core.js，请先运行 npm run sync`);

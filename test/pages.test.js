@@ -780,6 +780,41 @@ test('设置页：提前天数不能超出 0-30', async () => {
   assert.equal(settings.data.remindDays, 0);
 });
 
+test('设置页：推送时间只能选整点（避免设了 9:30 却永远收不到）', async () => {
+  const { stub, app, api } = setup();
+  const settings = mp.loadPage('pages/settings/settings', { wx: stub.wx, app });
+  await settings.onShow();
+  await stub.flush();
+
+  assert.equal(settings.data.hourOptions[0], '06:00');
+  assert.equal(settings.data.hourOptions.indexOf('09:00'), settings.data.hourIndex);
+
+  settings.onTimeChange({ detail: { value: 0 } });
+  assert.equal(settings.data.pushTime, '06:00');
+
+  await settings.save();
+  await stub.flush();
+  const profile = await api.call('family', 'profile');
+  assert.equal(profile.data.family.settings.pushTime, '06:00');
+});
+
+test('设置页：可以预览真实会推送的内容，不用等到早上', async () => {
+  const { stub, app } = setup();
+  const settings = mp.loadPage('pages/settings/settings', { wx: stub.wx, app });
+  await settings.onShow();
+  await stub.flush();
+
+  await settings.preview();
+  await stub.flush();
+
+  const modal = stub.lastModal();
+  assert.equal(modal.title, '提醒内容预览');
+  assert.match(modal.content, /thing1：/);
+  assert.match(modal.content, /抽纸/);
+  assert.match(modal.content, /待补货 2 样 \/ 共 6 样物品/);
+  assert.match(modal.content, /还没有模板 ID/);
+});
+
 test('设置页：演示模式下续订额度', async () => {
   const { stub, app } = setup();
   const settings = mp.loadPage('pages/settings/settings', { wx: stub.wx, app });

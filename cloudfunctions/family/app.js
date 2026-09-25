@@ -131,7 +131,10 @@ const handlers = {
     }
     if (payload.pushTime !== undefined) {
       const t = kit.str(payload.pushTime, { field: '推送时间', max: 5, required: true });
-      if (!/^\d{2}:\d{2}$/.test(t)) throw kit.appError('INVALID_INPUT', '推送时间格式应为 HH:mm');
+      // 定时器整点唤醒，所以只支持整点，避免「设了 9:30 却永远不推」这种静默失败
+      if (!/^([01]\d|2[0-3]):00$/.test(t)) {
+        throw kit.appError('INVALID_INPUT', '推送时间只能选整点，例如 09:00');
+      }
       next.pushTime = t;
     }
     if (payload.pushEnabled !== undefined) {
@@ -150,10 +153,23 @@ const handlers = {
     const quota = member.subQuota || { remaining: 0 };
     const next = {
       remaining: (Number(quota.remaining) || 0) + count,
+      blocked: false,
       updatedAt: now
     };
     await db.collection('members').where({ _id: member._id }).update({ data: { subQuota: next } });
-    return { familyId: family._id, subQuota: next };
+
+    // 顺手把模板 ID 存到家庭设置里：notify 云函数靠它发消息，
+    // 这样部署时不需要在两处填同一个 ID（也就不会填错）
+    const templateId = kit.str(payload.templateId, { field: '模板 ID', max: 100, fallback: null });
+    if (templateId) {
+      const settings = kit.settingsOf(family);
+      if (settings.templateId !== templateId) {
+        settings.templateId = templateId;
+        await db.collection('families').where({ _id: family._id }).update({ data: { settings } });
+      }
+    }
+
+    return { familyId: family._id, subQuota: next, templateId: templateId || null };
   },
 
   /** 推送失败回执：扣额度 / 或标记拒收 */

@@ -15,9 +15,9 @@
     <view class="row">
       <view class="row-main">
         <text class="row-label">每天几点推</text>
-        <text class="row-desc muted">每天最多推一条汇总，不会一条条轰炸你</text>
+        <text class="row-desc muted">每天最多推一条汇总，不会一条条轰炸你。只能选整点。</text>
       </view>
-      <picker mode="time" value="{{pushTime}}" bindchange="onTimeChange">
+      <picker mode="selector" range="{{hourOptions}}" value="{{hourIndex}}" bindchange="onTimeChange">
         <view class="time-picker">{{pushTime}} ›</view>
       </picker>
     </view>
@@ -28,6 +28,16 @@
         <text class="row-desc muted">关掉之后就只能自己进小程序看了</text>
       </view>
       <switch checked="{{pushEnabled}}" color="#FF7A45" bindchange="onSwitch" />
+    </view>
+  </view>
+
+  <view class="card list">
+    <view class="row" bindtap="preview">
+      <view class="row-main">
+        <text class="row-label">预览提醒内容</text>
+        <text class="row-desc muted">看看真到点会推什么，不用等到第二天早上</text>
+      </view>
+      <text class="row-value muted">›</text>
     </view>
   </view>
 

@@ -146,6 +146,49 @@ async function loadItemDetail(db, family, itemId, now) {
   };
 }
 
+// ---------------------------------------------------------------- 提醒推送
+
+const MS_HOUR = 60 * 60 * 1000;
+/** 云函数运行时时区不一定稳定，统一按 UTC+8 折算，保证「今天」的判定可复现 */
+const TZ_OFFSET = 8 * MS_HOUR;
+
+/** 'YYYY-MM-DD'（UTC+8）。用于推送幂等键。 */
+function dateKey(now) {
+  const t = new Date(now.getTime() + TZ_OFFSET);
+  const p = (n) => (n < 10 ? `0${n}` : `${n}`);
+  return `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`;
+}
+
+/** 当前小时（UTC+8，0-23） */
+function hourOf(now) {
+  return new Date(now.getTime() + TZ_OFFSET).getUTCHours();
+}
+
+/** 'HH:mm' 的小时部分 */
+function pushHourOf(pushTime) {
+  const m = /^(\d{2}):(\d{2})$/.exec(String(pushTime || ''));
+  if (!m) return null;
+  const h = Number(m[1]);
+  return h >= 0 && h <= 23 ? h : null;
+}
+
+/**
+ * 算出某个家庭今天该推的内容。
+ * 返回 hasContent=false 表示今天没有要买的东西，不该打扰用户。
+ */
+async function buildFamilyPush(db, family, now) {
+  const { refill, settings, views } = await loadFamilyViews(db, family, now);
+  const { hasContent, payload } = core.buildPushPayload(family, refill, now);
+  return {
+    hasContent,
+    payload,
+    refill,
+    settings,
+    refillCount: refill.length,
+    itemCount: views.length
+  };
+}
+
 /** 把 Date 递归转成 ISO 字符串，保证返回值与客户端所见完全一致（也便于断言） */
 function toJSON(value) {
   if (value === undefined) return null;
@@ -275,6 +318,10 @@ module.exports = {
   indexById,
   loadFamilyViews,
   loadItemDetail,
+  buildFamilyPush,
+  dateKey,
+  hourOf,
+  pushHourOf,
   toJSON,
   publicMember,
   publicFamily,

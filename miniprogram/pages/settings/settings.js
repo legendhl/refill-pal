@@ -3,12 +3,21 @@
 const api = require('../../utils/api');
 const config = require('../../config');
 
+/** 定时器整点唤醒，所以只开放整点选择，避免「设了 9:30 却永远收不到」 */
+function hourOptions() {
+  const out = [];
+  for (let h = 6; h <= 23; h += 1) out.push(`${h < 10 ? '0' : ''}${h}:00`);
+  return out;
+}
+
 Page({
   data: {
     loading: true,
     remindDays: config.DEFAULT_REMIND_DAYS,
     pushTime: '09:00',
     pushEnabled: true,
+    hourOptions: hourOptions(),
+    hourIndex: 3,
     quota: 0,
     lowQuota: false,
     saving: false,
@@ -28,10 +37,13 @@ Page({
     }
     const settings = (res.data.family && res.data.family.settings) || {};
     const quota = (res.data.me && res.data.me.subQuota && res.data.me.subQuota.remaining) || 0;
+    const pushTime = settings.pushTime || '09:00';
+    const hourIndex = Math.max(0, this.data.hourOptions.indexOf(pushTime));
     this.setData({
       loading: false,
       remindDays: settings.remindDays === undefined ? config.DEFAULT_REMIND_DAYS : settings.remindDays,
-      pushTime: settings.pushTime || '09:00',
+      pushTime,
+      hourIndex,
       pushEnabled: settings.pushEnabled !== false,
       quota,
       lowQuota: quota < config.LOW_QUOTA_THRESHOLD
@@ -45,7 +57,41 @@ Page({
   },
 
   onTimeChange(e) {
-    this.setData({ pushTime: e.detail.value, changed: true });
+    const index = Number(e.detail.value);
+    this.setData({ hourIndex: index, pushTime: this.data.hourOptions[index], changed: true });
+  },
+
+  /** 预览：不至于为了确认模板字段对不对，等到第二天早上 */
+  async preview() {
+    const res = await api.call('notify', 'preview');
+    if (!res.ok) {
+      api.showError(new Error(res.message));
+      return;
+    }
+    const data = res.data;
+    if (!data.hasContent) {
+      wx.showModal({
+        title: '今天不会推送',
+        content: '眼下没有需要补货的东西，所以它不会打扰你 —— 这是设计如此。',
+        showCancel: false
+      });
+      return;
+    }
+    const lines = Object.keys(data.payload || {}).map((key) => {
+      const v = data.payload[key];
+      const text = v && typeof v === 'object' && 'value' in v ? v.value : v;
+      return `${key}：${text}`;
+    });
+    const notes = [
+      `待补货 ${data.refillCount} 样 / 共 ${data.itemCount} 样物品`,
+      `推送时间 ${data.pushTime}，额度 ${data.quota} 次`,
+      data.templateConfigured ? '模板 ID 已记录' : '还没有模板 ID：需要先点一次「续订提醒次数」'
+    ];
+    wx.showModal({
+      title: '提醒内容预览',
+      content: `${lines.join('\n')}\n\n${notes.join('\n')}`,
+      showCancel: false
+    });
   },
 
   onSwitch(e) {

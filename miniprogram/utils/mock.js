@@ -310,7 +310,9 @@ const handlers = {
       state.family.settings.remindDays = n;
     }
     if (p.pushTime !== undefined) {
-      if (!/^\d{2}:\d{2}$/.test(String(p.pushTime))) return fail('INVALID_INPUT', '推送时间格式应为 HH:mm');
+      if (!/^([01]\d|2[0-3]):00$/.test(String(p.pushTime))) {
+        return fail('INVALID_INPUT', '推送时间只能选整点，例如 09:00');
+      }
       state.family.settings.pushTime = String(p.pushTime);
     }
     if (p.pushEnabled !== undefined) state.family.settings.pushEnabled = Boolean(p.pushEnabled);
@@ -318,14 +320,17 @@ const handlers = {
   },
 
   'family/subscribe': async (payload) => {
-    const count = Number((payload && payload.count) || 1);
+    const p = payload || {};
+    const count = Number(p.count || 1);
     state.me.subQuota = {
       remaining: (state.me.subQuota.remaining || 0) + count,
+      blocked: false,
       updatedAt: now()
     };
     const member = state.members.find((m) => m._id === state.me._id);
     if (member) member.subQuota = state.me.subQuota;
-    return { familyId: state.family._id, subQuota: state.me.subQuota };
+    if (p.templateId) state.family.settings.templateId = String(p.templateId);
+    return { familyId: state.family._id, subQuota: state.me.subQuota, templateId: p.templateId || null };
   },
 
   'family/markPushResult': async (payload) => {
@@ -723,6 +728,25 @@ const handlers = {
       ),
       unestimableCount: all.filter((v) => !v.estimable).length,
       itemCount: all.length
+    };
+  },
+
+  'notify/preview': async () => {
+    if (!state.family) return { hasContent: false, payload: null, refillCount: 0, itemCount: 0 };
+    const all = views();
+    const refill = core.buildRefillList(all);
+    const { hasContent, payload } = core.buildPushPayload(state.family, refill, now());
+    const conf = settings();
+    return {
+      hasContent,
+      payload,
+      refillCount: refill.length,
+      itemCount: all.length,
+      pushTime: conf.pushTime,
+      pushEnabled: conf.pushEnabled !== false,
+      templateConfigured: Boolean(conf.templateId),
+      quota: (state.me && state.me.subQuota && state.me.subQuota.remaining) || 0,
+      serverTime: now()
     };
   },
 
