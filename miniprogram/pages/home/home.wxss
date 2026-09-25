@@ -193,3 +193,25 @@
 .undo-danger {
   color: #ff8f8f;
 }
+
+/* ---------------- 清单海报 ---------------- */
+
+.link {
+  color: #ff7a45;
+  font-weight: 600;
+  font-size: 27rpx;
+  padding: 4rpx 8rpx;
+}
+
+.remind-hint {
+  margin-left: 20rpx;
+}
+
+/* 离屏画布：必须给明确的像素尺寸，但不要出现在屏幕上 */
+.poster-canvas {
+  position: fixed;
+  left: -2000px;
+  top: 0;
+  width: 600px;
+  height: 820px;
+}

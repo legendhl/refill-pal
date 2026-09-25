@@ -97,6 +97,24 @@ async function main() {
     await home.callMethod('closeSheet');
     await sleep(1500);
 
+    // 清单海报：离屏 canvas 真画一张出来（发家庭群用）
+    // automator 不会 await 异步页面方法，所以从页面 data 里读结果
+    await home.callMethod('drawPoster');
+    await sleep(3000);
+    const posterPath = (await home.data()).posterPath;
+    check('清单海报能画出来', typeof posterPath === 'string' && posterPath.length > 0, String(posterPath));
+    if (posterPath) {
+      // 在模拟器里把生成的图预览出来，这样截屏就能看到 canvas 实际画了什么
+      await mp.evaluate((src) => {
+        wx.previewImage({ urls: [src], current: src });
+      }, posterPath);
+      await sleep(1500);
+      await shot(mp, '12-poster');
+      await mp.evaluate(() => {
+        if (typeof wx.hideLoading === 'function') wx.hideLoading();
+      });
+    }
+
     // ---------------- 物品页
     await mp.switchTab('/pages/items/items');
     await sleep(WAIT);

@@ -21,7 +21,10 @@
 
     <view class="section-title">
       <text>该买了</text>
-      <text class="muted" wx:if="{{remindDays !== undefined}}">提前 {{remindDays}} 天提醒</text>
+      <view class="row">
+        <text class="link" wx:if="{{refill.length}}" bindtap="sharePoster">分享清单</text>
+        <text class="muted remind-hint" wx:if="{{remindDays !== undefined}}">提前 {{remindDays}} 天提醒</text>
+      </view>
     </view>
 
     <block wx:if="{{refill.length}}">
@@ -113,6 +116,9 @@
   </scroll-view>
   <view class="safe-bottom"></view>
 </view>
+
+<!-- 画清单海报用的离屏画布 -->
+<canvas type="2d" id="poster" class="poster-canvas"></canvas>
 
 <!-- 撤销条 -->
 <view class="undo-bar" wx:if="{{undo}}">

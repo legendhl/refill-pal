@@ -334,6 +334,28 @@ function toStatsVm(stats) {
   };
 }
 
+/**
+ * 待补货清单海报的内容。
+ * 只负责「写什么」，怎么画由页面负责 —— 于是这段逻辑可以离线断言。
+ */
+function posterLayout(cards, summary, maxLines = 8) {
+  const list = cards || [];
+  const shown = list.slice(0, maxLines);
+  return {
+    title: list.length ? `${list.length} 样该买了` : '暂时不用买',
+    subtitle: summary ? `${summary.monthLabel}已花 ${summary.monthTotalText} 元` : '家里的东西都还够用',
+    lines: shown.map((c, i) => ({
+      index: i + 1,
+      name: c.name,
+      right: c.shortText || '',
+      color: c.color || '#2F2723'
+    })),
+    /** 超过 maxLines 的部分不再逐个画，避免海报长得离谱 */
+    moreCount: Math.max(0, list.length - shown.length),
+    footer: '补货小管家 · 点开就能看到同一份清单'
+  };
+}
+
 /** 「记一笔」宫格项 */
 function toQuickItem(view) {
   const card = cardOf(view);
@@ -366,5 +388,6 @@ module.exports = {
   toTrendBars,
   momText,
   toStatsVm,
-  toQuickItem
+  toQuickItem,
+  posterLayout
 };

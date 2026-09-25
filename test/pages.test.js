@@ -339,6 +339,20 @@ test('首页：点卡片进详情页，点「去添加物品」切到物品页',
   assert.equal(stub.calls.switchTab[0].url, '/pages/items/items');
 });
 
+test('首页：分享清单在没有画布的环境里要优雅降级，不能崩', async () => {
+  const { stub, app } = setup();
+  const home = mp.loadPage('pages/home/home', { wx: stub.wx, app });
+  await home.onShow();
+  await stub.flush();
+
+  // Node 环境的 wx 桩里没有 createSelectorQuery，走的是失败分支
+  await home.sharePoster();
+  await stub.flush();
+
+  assert.equal(stub.lastToast().title, '生成清单图失败，稍后再试');
+  assert.equal(stub.calls.actionSheet.length, 0, '没画出图就不该弹保存菜单');
+});
+
 test('首页：演示模式下点续订会走一遍额度流程', async () => {
   const { stub, app } = setup();
   const home = mp.loadPage('pages/home/home', { wx: stub.wx, app });

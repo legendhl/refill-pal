@@ -333,6 +333,39 @@ test('toQuickItem：待补货的宫格项带高亮色', () => {
   assert.equal(vm.toQuickItem(fine).highlight, '');
 });
 
+test('posterLayout：清单海报写什么', () => {
+  const cards = [
+    { name: '抽纸', shortText: '已用完', color: '#E5484D' },
+    { name: '洗手液', shortText: '2 天后', color: '#FF7A45' },
+    { name: '洗衣液', shortText: '5 天后', color: '#D9A400' }
+  ];
+  const layout = vm.posterLayout(cards, { monthLabel: '2026 年 9 月', monthTotalText: '89' });
+  assert.equal(layout.title, '3 样该买了');
+  assert.equal(layout.subtitle, '2026 年 9 月已花 89 元');
+  assert.deepEqual(
+    layout.lines.map((l) => `${l.index}.${l.name}=${l.right}`),
+    ['1.抽纸=已用完', '2.洗手液=2 天后', '3.洗衣液=5 天后']
+  );
+  assert.match(layout.footer, /补货小管家/);
+});
+
+test('posterLayout：超过 8 条时收口，避免海报长得离谱', () => {
+  const cards = [];
+  for (let i = 1; i <= 11; i += 1) cards.push({ name: `物品${i}`, shortText: `${i} 天后`, color: '#2F2723' });
+  const layout = vm.posterLayout(cards, null);
+  assert.equal(layout.title, '11 样该买了');
+  assert.equal(layout.lines.length, 8);
+  assert.equal(layout.moreCount, 3);
+  assert.equal(layout.lines[7].name, '物品8');
+});
+
+test('posterLayout：没有待补货时也给一句人话，不留空', () => {
+  const layout = vm.posterLayout([], null);
+  assert.equal(layout.title, '暂时不用买');
+  assert.equal(layout.subtitle, '家里的东西都还够用');
+  assert.deepEqual(layout.lines, []);
+});
+
 test('normalizeItem：把云端下发的 ISO 字符串还原成日期', () => {
   const view = vm.normalizeItem({ _id: 'x', emptyAt: '2026-10-05T00:00:00.000Z', remainingDays: 10 });
   assert.ok(view.emptyAt instanceof Date);

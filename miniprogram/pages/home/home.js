@@ -41,7 +41,10 @@ Page({
 
     // 订阅额度
     showQuotaTip: false,
-    quota: 0
+    quota: 0,
+
+    // 清单海报的临时文件路径（生成后才有值）
+    posterPath: ''
   },
 
   onLoad() {
@@ -282,6 +285,122 @@ Page({
         this.undoQueue.undo(undo.id);
         this.setData({ undo: null });
         this.load({ silent: true });
+      }
+    });
+  },
+
+  // ------------------------------------------------------------ 清单海报
+
+  /**
+   * 把「该买了」画成一张图，方便直接发到家庭群（比小程序卡片更适合发给没有装小程序的人）。
+   * 画布用离屏 canvas，画完拿到临时文件路径。
+   */
+  async drawPoster() {
+    const layout = vm.posterLayout(this.data.refill, this.data.summary);
+    const W = 600;
+    // 高度按实际条目数算，2 样东西的海报不该有一半是空白
+    const H = 300 + layout.lines.length * 112 + (layout.moreCount ? 64 : 0) + 120;
+
+    const canvasNode = await new Promise((resolve) => {
+      wx.createSelectorQuery()
+        .select('#poster')
+        .fields({ node: true, size: true })
+        .exec((res) => resolve(res && res[0] && res[0].node));
+    });
+    if (!canvasNode) throw new Error('画布没有准备好');
+
+    const dpr = (wx.getWindowInfo && wx.getWindowInfo().pixelRatio) || 2;
+    const canvas = canvasNode;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // 背景
+    ctx.fillStyle = '#FFF8F3';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, W, 150);
+    ctx.fillStyle = '#FF7A45';
+    ctx.fillRect(0, 0, W, 12);
+
+    // 标题
+    ctx.fillStyle = '#2F2723';
+    ctx.font = 'bold 46px sans-serif';
+    ctx.fillText(layout.title, 40, 86);
+    ctx.fillStyle = '#9A8C84';
+    ctx.font = '24px sans-serif';
+    ctx.fillText(layout.subtitle, 40, 126);
+
+    // 清单条目
+    let y = 226;
+    layout.lines.forEach((line) => {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(30, y - 46, W - 60, 92);
+      ctx.fillStyle = line.color;
+      ctx.fillRect(30, y - 46, 8, 92);
+
+      ctx.fillStyle = '#2F2723';
+      ctx.font = 'bold 32px sans-serif';
+      const name = line.name.length > 12 ? `${line.name.slice(0, 12)}…` : line.name;
+      ctx.fillText(`${line.index}. ${name}`, 62, y + 4);
+
+      ctx.fillStyle = line.color;
+      ctx.font = '26px sans-serif';
+      const rightWidth = ctx.measureText(line.right).width;
+      ctx.fillText(line.right, W - 62 - rightWidth, y + 4);
+
+      y += 112;
+    });
+
+    if (layout.moreCount) {
+      ctx.fillStyle = '#9A8C84';
+      ctx.font = '26px sans-serif';
+      ctx.fillText(`还有 ${layout.moreCount} 样…`, 62, y + 4);
+    }
+
+    // 页脚
+    ctx.fillStyle = '#C9B8AE';
+    ctx.font = '22px sans-serif';
+    ctx.fillText(layout.footer, 40, H - 48);
+
+    const path = await new Promise((resolve, reject) => {
+      wx.canvasToTempFilePath({
+        canvas,
+        fileType: 'png',
+        success: (res) => resolve(res.tempFilePath),
+        fail: reject
+      });
+    });
+    // 存一份到 data：自动化验收要靠它确认真的画出来了
+    this.setData({ posterPath: path });
+    return path;
+  },
+
+  async sharePoster() {
+    wx.showLoading({ title: '生成中…' });
+    let filePath;
+    try {
+      filePath = await this.drawPoster();
+    } catch (e) {
+      wx.hideLoading();
+      wx.showToast({ title: '生成清单图失败，稍后再试', icon: 'none' });
+      return;
+    }
+    wx.hideLoading();
+
+    wx.showActionSheet({
+      itemList: ['保存到相册', '预览一下'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          wx.saveImageToPhotosAlbum({
+            filePath,
+            success: () => wx.showToast({ title: '已存到相册', icon: 'success' }),
+            fail: () => wx.showToast({ title: '需要相册权限才能保存', icon: 'none' })
+          });
+        } else {
+          wx.previewImage({ urls: [filePath] });
+        }
       }
     });
   },
