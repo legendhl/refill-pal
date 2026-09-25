@@ -85,10 +85,10 @@
 | `unit` | string | 单位：包 / 提 / 瓶 / 个 |
 | `brand` / `spec` | string | 品牌、规格，仅作展示（见 3.4 取舍） |
 | `initEstimateDays` | number \| null | 冷启动估计：首次添加时用户填「大概能用 N 天」 |
-| `rate` | number | 日均消耗（单位/天），由 `_shared/core` 计算后回写 |
-| `anchorAt` | Date | 锚点时刻 |
-| `anchorQty` | number | 锚点时刻的库存 |
-| `closedCycles` | number | 已闭合的消耗周期数，用于置信度 |
+| `baseAt` | Date | **不可变**初始基准时刻（创建物品的时间） |
+| `baseQty` | Date | **不可变**初始基准库存（创建时家里已有多少） |
+| `rate` | number | 日均消耗（单位/天），由 `_shared/core` 计算后回写的**缓存** |
+| `closedCycles` | number | 已闭合的消耗周期数（缓存），用于置信度 |
 | `status` | string | `active` / `archived` |
 | `lastPurchaseAt` | Date \| null | |
 | `createdBy` / `createdAt` | | |
@@ -142,15 +142,17 @@
 
 设计目标：**准确、可解释、能如实告知置信度**。全部实现为 `cloudfunctions/_shared/core.js` 中的纯函数，便于单测。
 
-### 3.1 库存结算：锚点法
+### 3.1 库存结算：事件溯源 + 锚点法
 
-不做逐日扣减（浮点误差会累积、且无法处理 rate 变化）。改为存 `anchorAt + anchorQty`：
+> 实施期修正：原设计让 `items` 直接维护 `anchorAt/anchorQty` 快照，实测发现「写入时维护的累加值」与「由流水推算的事实」会不一致（撤销、补录、改错都会让两者分叉）。改为 **事件溯源**：`items` 只存不可变的初始基准 `baseAt/baseQty`，当前库存一律由流水重放得出。
 
-```
-currentStock(item, now) = max(0, anchorQty - rate * daysBetween(anchorAt, now))
-```
+不做逐日扣减（浮点误差会累积、且无法处理 rate 变化）。读取路径分三步：
 
-每次写入流水前先「结算到当前时刻」，再修改锚点，保证任何时刻的库存都可即时推导。
+1. **重放**：从基准点出发，按时间顺序对每条流水「先结算到该时刻，再作用流水」，得到 live item 的 `anchorAt + anchorQty`；
+2. **结算**：`currentStock = anchorQty - rate * daysBetween(anchorAt, now)`；
+3. **预测**：`剩余天数 = currentStock / rate`。
+
+因为速率在区间内是常数，最终库存可化简为 `baseQty + Σ购买 − rate × 天数`（盘点会重置基线）。这保证了任意时刻的库存都能由流水唯一推导，不存在缓存与事实分叉。
 
 ### 3.2 速率估算：两段式
 

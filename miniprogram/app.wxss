@@ -1,0 +1,195 @@
+/* 全局样式：温暖居家风，主色暖橙 #FF7A45 */
+
+page {
+  background: #FFF8F3;
+  color: #2F2723;
+  font-size: 30rpx;
+  line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+}
+
+.page {
+  padding: 24rpx 24rpx 200rpx;
+  box-sizing: border-box;
+}
+
+/* ---------- 卡片 ---------- */
+.card {
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(180, 130, 100, 0.08);
+}
+
+.card-tight {
+  padding: 20rpx 24rpx;
+}
+
+/* ---------- 文字 ---------- */
+.title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #2F2723;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #6B5B52;
+  margin: 32rpx 8rpx 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.muted {
+  color: #9A8C84;
+  font-size: 26rpx;
+}
+
+.strong {
+  font-weight: 600;
+}
+
+.danger {
+  color: #E5484D;
+}
+
+/* ---------- 按钮 ---------- */
+.btn {
+  height: 96rpx;
+  line-height: 96rpx;
+  border-radius: 48rpx;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none;
+  padding: 0 40rpx;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #FF9057, #FF7A45);
+  color: #FFFFFF;
+  box-shadow: 0 8rpx 24rpx rgba(255, 122, 69, 0.32);
+}
+
+.btn-primary.btn-disabled {
+  background: #E8DDD6;
+  color: #FFFFFF;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: #FFF0E8;
+  color: #FF7A45;
+}
+
+.btn-plain {
+  background: #FFFFFF;
+  color: #6B5B52;
+  border: 2rpx solid #EFE3DB;
+}
+
+.btn-sm {
+  height: 64rpx;
+  line-height: 64rpx;
+  font-size: 26rpx;
+  padding: 0 28rpx;
+  border-radius: 32rpx;
+}
+
+/* ---------- 布局 ---------- */
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------- 徽标 ---------- */
+.badge {
+  display: inline-block;
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  line-height: 1.4;
+}
+
+/* ---------- 悬浮主按钮 ---------- */
+.fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: 60rpx;
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 70rpx;
+  background: linear-gradient(135deg, #FF9057, #FF7A45);
+  color: #FFFFFF;
+  font-size: 30rpx;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12rpx 32rpx rgba(255, 122, 69, 0.4);
+  z-index: 20;
+}
+
+.fab-plus {
+  font-size: 44rpx;
+  line-height: 1;
+  margin-bottom: 2rpx;
+}
+
+/* ---------- 离线/提示条 ---------- */
+.banner {
+  background: #FFF4E5;
+  color: #8A6A2F;
+  font-size: 26rpx;
+  padding: 16rpx 24rpx;
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.banner-error {
+  background: #FFECEE;
+  color: #B3282D;
+}
+
+/* ---------- 空状态 ---------- */
+.empty {
+  padding: 120rpx 40rpx;
+  text-align: center;
+  color: #9A8C84;
+}
+
+.empty-emoji {
+  font-size: 88rpx;
+  display: block;
+  margin-bottom: 24rpx;
+}
+
+/* ---------- 安全区 ---------- */
+.safe-bottom {
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+}

@@ -1,0 +1,16 @@
+{
+  "name": "refillpal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "补货小管家 RefillPal - 家庭日用品补货管理小程序",
+  "scripts": {
+    "pretest": "node scripts/sync-shared.js",
+    "test": "node --test test/*.test.js",
+    "sync": "node scripts/sync-shared.js",
+    "check": "node scripts/check-json.js",
+    "verify": "npm run sync && npm run check && npm test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/items/items",
+    "pages/stats/stats",
+    "pages/me/me",
+    "pages/item-detail/item-detail",
+    "pages/item-edit/item-edit",
+    "pages/family/family",
+    "pages/settings/settings",
+    "pages/onboarding/onboarding"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#FF7A45",
+    "navigationBarTitleText": "补货小管家",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#FFF8F3",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "color": "#9A8C84",
+    "selectedColor": "#FF7A45",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "待补货"
+      },
+      {
+        "pagePath": "pages/items/items",
+        "text": "物品"
+      },
+      {
+        "pagePath": "pages/stats/stats",
+        "text": "统计"
+      },
+      {
+        "pagePath": "pages/me/me",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}
