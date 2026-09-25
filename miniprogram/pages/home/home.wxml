@@ -1,0 +1,120 @@
+<view class="page">
+  <view class="banner" wx:if="{{offline}}">当前是离线数据，可能不是最新。联网后会自动刷新。</view>
+
+  <!-- 还没有家庭 -->
+  <block wx:if="{{noFamily}}">
+    <view class="card hero">
+      <view class="hero-title">先建一个「家」</view>
+      <view class="muted hero-sub">家里人共享同一份数据：谁买了、买了多少，都记在同一本账上，提醒也只提醒一次。</view>
+    </view>
+    <button class="btn btn-primary" bindtap="goOnboarding">创建家庭 / 输入邀请码加入</button>
+  </block>
+
+  <block wx:else>
+    <view class="hero card">
+      <view class="hero-title">{{headline.title}}</view>
+      <view class="hero-sub">{{headline.subtitle}}</view>
+      <view class="hero-month" wx:if="{{summary}}">
+        {{summary.monthLabel}}已花 {{summary.monthTotalText}} 元 · {{summary.monthCount}} 笔
+      </view>
+    </view>
+
+    <view class="section-title">
+      <text>该买了</text>
+      <text class="muted" wx:if="{{remindDays !== undefined}}">提前 {{remindDays}} 天提醒</text>
+    </view>
+
+    <block wx:if="{{refill.length}}">
+      <item-card
+        wx:for="{{refill}}"
+        wx:key="id"
+        card="{{item}}"
+        show-confidence="{{true}}"
+        bind:tap="openItem"
+      />
+    </block>
+    <empty-state
+      wx:else
+      emoji="{{emptyRefill.emoji}}"
+      title="{{emptyRefill.title}}"
+      desc="{{emptyRefill.desc}}"
+      action-text="{{hasItems ? '' : '去添加物品'}}"
+      bind:action="goItems"
+    />
+
+    <block wx:if="{{ok.length}}">
+      <view class="section-title">
+        <text>还够用</text>
+        <text class="muted">{{ok.length}} 样</text>
+      </view>
+      <item-card
+        wx:for="{{ok}}"
+        wx:key="id"
+        card="{{item}}"
+        compact="{{true}}"
+        bind:tap="openItem"
+      />
+    </block>
+
+    <view class="quota card" wx:if="{{showQuotaTip}}" bindtap="requestSubscribe">
+      <view class="quota-title">提醒次数快用完了（还剩 {{quota}} 次）</view>
+      <view class="quota-desc">微信规定每授权一次只能推一条，点这里续订，每天最多打扰你一次。</view>
+      <view class="quota-action">点我续订 ›</view>
+    </view>
+
+    <view class="tip muted" wx:if="{{hasItems}}">东西用完了记得点一下「用完了」，下次就能算得更准。</view>
+  </block>
+</view>
+
+<!-- 记一笔 -->
+<view class="fab" wx:if="{{!noFamily && !sheetVisible}}" bindtap="openSheet">
+  <text class="fab-plus">＋</text>
+  <text class="fab-text">记一笔</text>
+</view>
+
+<view class="mask" wx:if="{{sheetVisible}}" bindtap="closeSheet"></view>
+<view class="sheet" wx:if="{{sheetVisible}}">
+  <view class="sheet-head">
+    <input
+      class="sheet-search"
+      placeholder="搜物品名 / 分类 / 品牌"
+      value="{{keyword}}"
+      bindinput="onSearch"
+      confirm-type="search"
+    />
+    <text class="sheet-close" bindtap="closeSheet">关闭</text>
+  </view>
+  <view class="sheet-hint">点一下就是「买了 1 个」，长按可以改数量</view>
+
+  <scroll-view scroll-y class="sheet-body">
+    <view class="quick-grid" wx:if="{{!quickLoading}}">
+      <view
+        class="quick-item"
+        wx:for="{{keyword ? searchResults : quickItems}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="quickAdd"
+        bindlongpress="quickAddLong"
+        hover-class="quick-item-hover"
+      >
+        <view class="quick-name">{{item.name}}</view>
+        <view class="quick-stock" style="color: {{item.color}}">{{item.shortText}}</view>
+        <view class="quick-unit">{{item.stockText}}</view>
+      </view>
+    </view>
+    <view class="empty" wx:elif="{{quickLoading}}">正在加载常用物品…</view>
+    <view class="empty" wx:else>还没有物品，先去「物品」页添加</view>
+
+    <view class="empty" wx:if="{{keyword && !searchResults.length && !quickLoading}}">
+      没找到「{{keyword}}」，去「物品」页新建一个吧
+    </view>
+  </scroll-view>
+  <view class="safe-bottom"></view>
+</view>
+
+<!-- 撤销条 -->
+<view class="undo-bar" wx:if="{{undo}}">
+  <text class="undo-text">已记：{{undo.label}}</text>
+  <text class="undo-action" bindtap="fillAmount">补金额</text>
+  <text class="undo-action undo-danger" bindtap="undoAdd">撤销</text>
+</view>

@@ -1,0 +1,199 @@
+.hero {
+  background: linear-gradient(135deg, #fff3ea, #ffffff);
+  border: 2rpx solid #ffe6d8;
+}
+
+.hero-title {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #2f2723;
+}
+
+.hero-sub {
+  font-size: 28rpx;
+  color: #6b5b52;
+  margin-top: 10rpx;
+}
+
+.hero-month {
+  margin-top: 20rpx;
+  font-size: 26rpx;
+  color: #9a8c84;
+}
+
+.quota {
+  margin-top: 32rpx;
+  background: #fff8e1;
+  border: 2rpx solid #ffe9a8;
+}
+
+.quota-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #8a6a2f;
+}
+
+.quota-desc {
+  font-size: 25rpx;
+  color: #a08a5f;
+  margin-top: 8rpx;
+  line-height: 1.5;
+}
+
+.quota-action {
+  margin-top: 14rpx;
+  font-size: 27rpx;
+  color: #ff7a45;
+  font-weight: 600;
+}
+
+.tip {
+  text-align: center;
+  margin: 40rpx 20rpx 0;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+/* ---------------- 记一笔面板 ---------------- */
+
+.fab-text {
+  font-size: 24rpx;
+}
+
+.mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(47, 39, 35, 0.4);
+  z-index: 30;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  background: #fff8f3;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 28rpx 24rpx 0;
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.sheet-search {
+  flex: 1;
+  height: 76rpx;
+  background: #ffffff;
+  border-radius: 38rpx;
+  padding: 0 28rpx;
+  font-size: 28rpx;
+}
+
+.sheet-close {
+  font-size: 28rpx;
+  color: #9a8c84;
+  padding: 10rpx;
+}
+
+.sheet-hint {
+  font-size: 24rpx;
+  color: #9a8c84;
+  margin: 18rpx 8rpx 12rpx;
+}
+
+.sheet-body {
+  flex: 1;
+  max-height: 56vh;
+}
+
+.quick-grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding-bottom: 20rpx;
+}
+
+.quick-item {
+  width: 32%;
+  box-sizing: border-box;
+  margin: 0 2% 2% 0;
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 24rpx 16rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 14rpx rgba(180, 130, 100, 0.08);
+}
+
+.quick-item-hover {
+  background: #fff0e8;
+  transform: scale(0.97);
+}
+
+.quick-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #2f2723;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.quick-stock {
+  font-size: 24rpx;
+  margin-top: 8rpx;
+  font-weight: 600;
+}
+
+.quick-unit {
+  font-size: 22rpx;
+  color: #9a8c84;
+  margin-top: 4rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------------- 撤销条 ---------------- */
+
+.undo-bar {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: calc(40rpx + env(safe-area-inset-bottom));
+  z-index: 50;
+  background: #2f2723;
+  color: #ffffff;
+  border-radius: 20rpx;
+  padding: 24rpx 28rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 12rpx 32rpx rgba(47, 39, 35, 0.35);
+}
+
+.undo-text {
+  flex: 1;
+  font-size: 28rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.undo-action {
+  font-size: 28rpx;
+  color: #ffb08a;
+  margin-left: 28rpx;
+  font-weight: 600;
+}
+
+.undo-danger {
+  color: #ff8f8f;
+}

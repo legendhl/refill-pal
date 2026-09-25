@@ -1,0 +1,144 @@
+.head {
+  border-left: 8rpx solid #ff7a45;
+}
+
+.head-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.head-name {
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.head-stock {
+  font-size: 44rpx;
+  font-weight: 700;
+  margin-top: 16rpx;
+}
+
+.head-remaining {
+  font-size: 28rpx;
+  color: #6b5b52;
+  margin-top: 6rpx;
+}
+
+.facts {
+  display: flex;
+  margin-top: 28rpx;
+  border-top: 2rpx solid #f5ece6;
+  padding-top: 24rpx;
+}
+
+.fact {
+  flex: 1;
+}
+
+.fact-label {
+  display: block;
+  font-size: 23rpx;
+  color: #9a8c84;
+}
+
+.fact-value {
+  display: block;
+  font-size: 27rpx;
+  color: #2f2723;
+  font-weight: 600;
+  margin-top: 6rpx;
+}
+
+.basis {
+  margin-top: 24rpx;
+  font-size: 24rpx;
+  color: #9a8c84;
+  line-height: 1.6;
+  background: #fbf6f2;
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+}
+
+.basis.warn {
+  color: #8a6a2f;
+  background: #fff8e1;
+  margin-top: 12rpx;
+}
+
+.actions {
+  display: flex;
+  gap: 16rpx;
+  margin: 8rpx 0 8rpx;
+}
+
+.grow-btn {
+  flex: 1;
+  padding: 0 8rpx;
+  font-size: 28rpx;
+}
+
+/* ---------------- 时间轴 ---------------- */
+
+.timeline {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 12rpx 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(180, 130, 100, 0.08);
+}
+
+.tl-item {
+  display: flex;
+  align-items: center;
+  padding: 22rpx 0;
+  border-bottom: 2rpx solid #f7f1ec;
+}
+
+.tl-item:last-child {
+  border-bottom: none;
+}
+
+.tl-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 8rpx;
+  background: #d9a400;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.dot-buy {
+  background: #ff7a45;
+}
+
+.dot-close {
+  background: #e5484d;
+}
+
+.tl-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.tl-title {
+  font-size: 29rpx;
+  color: #2f2723;
+}
+
+.tl-sub {
+  font-size: 24rpx;
+  margin-top: 4rpx;
+}
+
+.tl-date {
+  font-size: 23rpx;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.edit-row {
+  display: flex;
+  justify-content: center;
+  gap: 20rpx;
+  margin-top: 40rpx;
+}

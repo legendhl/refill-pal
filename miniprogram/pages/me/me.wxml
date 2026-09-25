@@ -1,0 +1,64 @@
+<view class="page" wx:if="{{!loading}}">
+  <view class="card profile">
+    <view class="avatar">{{nickName ? nickName[0] : '我'}}</view>
+    <view class="profile-main">
+      <view class="profile-name">{{nickName || '还没有昵称'}}</view>
+      <view class="muted">{{hasFamily ? familyName + ' · ' + roleText : '还没有加入家庭'}}</view>
+    </view>
+  </view>
+
+  <view class="banner" wx:if="{{isMock}}">
+    当前是<text class="strong">演示模式</text>，数据只存在这台手机上。按 docs/deploy.md 开通云开发后，把 config.js 里的 USE_MOCK 改成 false，家人就能共享同一份数据了。
+  </view>
+  <view class="banner banner-error" wx:if="{{!isMock && !envConfigured}}">
+    config.js 里的云开发环境 ID 还是占位符，云函数调不通。请看 docs/deploy.md 第 2 步。
+  </view>
+
+  <view class="section-title">家庭</view>
+  <view class="card list">
+    <view class="row" bindtap="goFamily">
+      <text class="row-label">家庭与成员</text>
+      <text class="row-value muted">{{hasFamily ? memberCount + ' 人' : '去创建'}} ›</text>
+    </view>
+    <view class="row" bindtap="goSettings">
+      <text class="row-label">提醒设置</text>
+      <text class="row-value muted">{{pushEnabled ? pushTime : '已关闭'}} ›</text>
+    </view>
+    <view class="row">
+      <text class="row-label">提醒次数余额</text>
+      <text class="row-value muted">{{quota}} 次 ›</text>
+    </view>
+  </view>
+
+  <view class="section-title">数据</view>
+  <view class="card list">
+    <view class="row" bindtap="exportData">
+      <text class="row-label">导出全部数据</text>
+      <text class="row-value muted">复制为 JSON ›</text>
+    </view>
+    <view class="row" bindtap="clearCache">
+      <text class="row-label">清空本地缓存</text>
+      <text class="row-value muted">不影响云端 ›</text>
+    </view>
+    <view class="row" wx:if="{{isMock}}" bindtap="resetDemo">
+      <text class="row-label danger">重置演示数据</text>
+      <text class="row-value muted">›</text>
+    </view>
+  </view>
+
+  <view class="section-title">关于</view>
+  <view class="card list">
+    <view class="row" bindtap="about">
+      <text class="row-label">补货小管家是什么</text>
+      <text class="row-value muted">›</text>
+    </view>
+    <view class="row">
+      <text class="row-label">版本</text>
+      <text class="row-value muted">{{version}}</text>
+    </view>
+  </view>
+
+  <view class="safe-bottom"></view>
+</view>
+
+<view class="empty" wx:else>正在加载…</view>

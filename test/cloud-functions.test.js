@@ -369,6 +369,22 @@ test('用完：库存归零并进入待补货', async () => {
   assert.equal(home.refill[0].name, '牙膏');
 });
 
+test('归档物品不在列表里，但详情仍然能读（回归：曾误报 ITEM_NOT_FOUND）', async () => {
+  const env = newEnv();
+  const { dad } = await twoMemberFamily(env);
+  const created = ok(await dad.item('create', { name: '抽纸', baseQty: 2 }));
+  ok(await dad.purchase('add', { entries: [{ itemId: created.item._id, qty: 3 }] }));
+
+  ok(await dad.item('archive', { itemId: created.item._id }));
+  assert.equal(ok(await dad.item('list')).items.length, 0, '归档后不该出现在列表里');
+
+  const detail = ok(await dad.item('detail', { itemId: created.item._id }));
+  assert.ok(detail.item, '详情必须仍然返回视图');
+  assert.equal(detail.item.status, 'archived');
+  assert.equal(detail.item.stock, 5);
+  assert.equal(detail.events.length, 1);
+});
+
 test('物品详情：返回升序时间轴', async () => {
   const env = newEnv();
   const { dad } = await twoMemberFamily(env);

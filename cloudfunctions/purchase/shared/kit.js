@@ -122,6 +122,30 @@ async function loadFamilyViews(db, family, now) {
   };
 }
 
+/**
+ * 单个物品的视图与时间轴。
+ *
+ * 刻意不走 loadFamilyViews：那个函数按列表口径排除了归档物品，
+ * 而详情页**必须能打开归档物品**（否则归档后一点进去就报「找不到这个物品」）。
+ * 顺带也比拉全家的流水更省。
+ */
+async function loadItemDetail(db, family, itemId, now) {
+  const item = await requireOwnItem(db, family._id, String(itemId));
+  const events = await fetchAll(
+    db
+      .collection('events')
+      .where({ familyId: family._id, itemId: String(item._id) })
+      .orderBy('occurredAt', 'asc')
+  );
+  const settings = settingsOf(family);
+  return {
+    item,
+    events,
+    view: core.buildItemView(item, events, now, { remindDays: settings.remindDays }),
+    remindDays: settings.remindDays
+  };
+}
+
 /** 把 Date 递归转成 ISO 字符串，保证返回值与客户端所见完全一致（也便于断言） */
 function toJSON(value) {
   if (value === undefined) return null;
@@ -250,6 +274,7 @@ module.exports = {
   groupEventsByItem,
   indexById,
   loadFamilyViews,
+  loadItemDetail,
   toJSON,
   publicMember,
   publicFamily,

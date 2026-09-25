@@ -1,0 +1,44 @@
+<view class="page">
+  <view class="search-bar">
+    <input
+      class="search-input"
+      placeholder="搜物品名 / 分类 / 品牌 / 规格"
+      value="{{keyword}}"
+      bindinput="onSearch"
+      confirm-type="search"
+    />
+  </view>
+
+  <block wx:if="{{total}}">
+    <view class="summary muted">{{total}} 样物品</view>
+    <block wx:for="{{groups}}" wx:key="category" wx:for-item="group">
+      <view class="section-title">
+        <text>{{group.category}}</text>
+        <text class="muted">{{group.count}}</text>
+      </view>
+      <item-card
+        wx:for="{{group.items}}"
+        wx:key="id"
+        card="{{item}}"
+        compact="{{true}}"
+        bind:tap="openItem"
+      />
+    </block>
+    <view class="empty" wx:if="{{!groups.length}}">没有匹配「{{keyword}}」的物品</view>
+  </block>
+
+  <empty-state
+    wx:elif="{{!loading}}"
+    emoji="{{empty.emoji}}"
+    title="{{empty.title}}"
+    desc="{{empty.desc}}"
+    action-text="{{empty.actionText}}"
+    bind:action="goCreate"
+  />
+
+  <view class="empty" wx:else>正在加载…</view>
+</view>
+
+<view class="fab fab-small" bindtap="goCreate">
+  <text class="fab-plus">＋</text>
+</view>

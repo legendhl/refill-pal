@@ -1,0 +1,114 @@
+<view class="page" wx:if="{{!loading && view}}">
+  <picker mode="selector" range="{{months}}" range-key="label" value="{{monthIndex}}" bindchange="onMonthChange">
+    <view class="month-picker">
+      <text class="month-label">{{view.monthLabel}}</text>
+      <text class="month-arrow">切换 ›</text>
+    </view>
+  </picker>
+
+  <view class="card total">
+    <view class="total-main">
+      <text class="total-num">{{view.totalText}}</text>
+      <text class="total-unit">元</text>
+    </view>
+    <view class="total-meta">
+      <text class="muted">{{view.countText}} · 日均 {{view.dailyText}}</text>
+      <text class="mom" style="color: {{view.mom.color}}">{{view.mom.text}}</text>
+    </view>
+    <view class="missing" wx:if="{{view.missingAmountCount}}">
+      有 {{view.missingAmountCount}} 笔没记金额，没有算进上面的合计
+    </view>
+  </view>
+
+  <block wx:if="{{view.hasBars}}">
+    <view class="section-title">花在哪</view>
+    <view class="card">
+      <view class="bar-row" wx:for="{{view.bars}}" wx:key="key">
+        <text class="bar-key">{{item.key}}</text>
+        <view class="bar-track">
+          <view class="bar-fill" style="width: {{item.percent}}%"></view>
+        </view>
+        <text class="bar-value">{{item.amountText}}</text>
+      </view>
+    </view>
+
+    <view class="section-title" wx:if="{{view.channelBars.length > 1}}">在哪买的</view>
+    <view class="card" wx:if="{{view.channelBars.length > 1}}">
+      <view class="bar-row" wx:for="{{view.channelBars}}" wx:key="key">
+        <text class="bar-key">{{item.key}}</text>
+        <view class="bar-track">
+          <view class="bar-fill bar-fill-2" style="width: {{item.percent}}%"></view>
+        </view>
+        <text class="bar-value">{{item.amountText}}</text>
+      </view>
+    </view>
+  </block>
+
+  <view class="section-title" wx:if="{{view.trendBars.length}}">最近半年</view>
+  <view class="card chart" wx:if="{{view.trendBars.length}}">
+    <view class="chart-bars">
+      <view class="chart-col" wx:for="{{view.trendBars}}" wx:key="key">
+        <text class="chart-value">{{item.totalText}}</text>
+        <view class="chart-bar-wrap">
+          <view
+            class="chart-bar {{item.isCurrent ? 'chart-bar-current' : ''}}"
+            style="height: {{item.heightPercent}}%"
+          ></view>
+        </view>
+        <text class="chart-label">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <block wx:if="{{view.predicted.length}}">
+    <view class="section-title">
+      <text>照这样用，一个月要花</text>
+      <text class="muted">约 {{view.predictedTotalText}} 元</text>
+    </view>
+    <view class="card">
+      <view class="pred-row" wx:for="{{view.predicted}}" wx:key="itemId">
+        <view class="pred-main">
+          <text class="pred-name">{{item.name}}</text>
+          <text class="pred-sub muted">{{item.monthlyQtyText}}</text>
+        </view>
+        <text class="pred-cost {{item.hasCost ? '' : 'muted'}}">{{item.monthlyCostText}}</text>
+      </view>
+      <view class="pred-note muted" wx:if="{{view.unestimableCount}}">
+        还有 {{view.unestimableCount}} 样物品数据不够，暂时算不进来。
+      </view>
+    </view>
+  </block>
+
+  <block wx:if="{{view.rank.length}}">
+    <view class="section-title">
+      <text>这个月买得最多的</text>
+      <text class="muted" bindtap="toggleRank">{{showAllRank ? '收起' : '全部'}}</text>
+    </view>
+    <view class="card">
+      <view
+        class="rank-row"
+        wx:for="{{view.rank}}"
+        wx:key="itemId"
+        wx:if="{{showAllRank || index < 5}}"
+        data-id="{{item.itemId}}"
+        bindtap="goItem"
+      >
+        <text class="rank-index">{{index + 1}}</text>
+        <view class="rank-main">
+          <text class="rank-name">{{item.name}}</text>
+          <text class="rank-sub muted">{{item.qtyText}} · {{item.countText}}</text>
+        </view>
+        <text class="rank-amount">{{item.amountText}}</text>
+      </view>
+    </view>
+  </block>
+
+  <view class="empty" wx:if="{{!view.hasData}}">
+    <text class="empty-emoji">📊</text>
+    <view>{{view.monthLabel}}还没有记录</view>
+    <view class="muted">去「待补货」页记一笔，这里就有数据了</view>
+  </view>
+  <view class="safe-bottom"></view>
+</view>
+
+<view class="empty" wx:else>正在加载…</view>

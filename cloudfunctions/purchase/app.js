@@ -115,6 +115,46 @@ const handlers = {
     };
   },
 
+  /** 补金额 / 改数量 / 改渠道。事件溯源让「改历史」是安全的：库存会跟着重算。 */
+  async update(ctx) {
+    const { db, openid, payload } = ctx;
+    const { family } = await kit.requireFamily(db, openid);
+    const eventId = kit.str(payload.eventId, { field: '记录', max: 40, required: true });
+    const patch = payload.patch || {};
+
+    const rows = await kit.fetchAll(
+      db.collection('events').where({ familyId: family._id }).orderBy('occurredAt', 'desc'),
+      { max: 5000 }
+    );
+    const target = rows.find((r) => String(r._id) === eventId);
+    if (!target) throw kit.appError('EVENT_NOT_FOUND', '这条记录已经不存在了');
+    if (target.type !== 'purchase') {
+      throw kit.appError('INVALID_INPUT', '只有购买记录可以改金额或数量');
+    }
+
+    const next = {};
+    if (patch.amount !== undefined) {
+      const amount = kit.num(patch.amount, { field: '金额', min: 0, max: 999999, fallback: null });
+      next.amount = amount === 0 ? null : amount;
+    }
+    if (patch.qty !== undefined) {
+      next.qty = kit.num(patch.qty, { field: '数量', min: 0.01, max: 99999, required: true });
+    }
+    if (patch.channel !== undefined) {
+      next.channel = kit.str(patch.channel, { field: '渠道', max: 10, fallback: null });
+    }
+    if (patch.note !== undefined) {
+      next.note = kit.str(patch.note, { field: '备注', max: 50, fallback: null });
+    }
+    if (!Object.keys(next).length) throw kit.appError('INVALID_INPUT', '没有要修改的内容');
+
+    await db.collection('events').where({ _id: target._id }).update({ data: next });
+    return {
+      eventId: target._id,
+      items: await viewsOf(ctx, family, [String(target.itemId)])
+    };
+  },
+
   /** 最近的流水（物品详情之外的一个总览，也用于「我最近记了什么」） */
   async recent(ctx) {
     const { db, openid, payload } = ctx;

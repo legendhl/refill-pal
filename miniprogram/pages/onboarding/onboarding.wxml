@@ -1,0 +1,54 @@
+<view class="page">
+  <view class="hero">
+    <text class="hero-emoji">🧺</text>
+    <view class="hero-title">补货小管家</view>
+    <view class="hero-desc">记一笔买了什么，它学会你的消耗速度，在快用完的时候提醒你。</view>
+  </view>
+
+  <view class="tabs">
+    <view class="tab {{mode === 'create' ? 'tab-active' : ''}}" data-mode="create" bindtap="switchMode">创建家庭</view>
+    <view class="tab {{mode === 'join' ? 'tab-active' : ''}}" data-mode="join" bindtap="switchMode">加入家庭</view>
+  </view>
+
+  <view class="card">
+    <block wx:if="{{mode === 'create'}}">
+      <view class="field">
+        <text class="label">家庭名</text>
+        <input class="input" value="{{familyName}}" data-field="familyName" bindinput="onInput" maxlength="16" />
+      </view>
+    </block>
+    <block wx:else>
+      <view class="field">
+        <text class="label">邀请码</text>
+        <input
+          class="input code-input"
+          value="{{inviteCode}}"
+          data-field="inviteCode"
+          bindinput="onInput"
+          maxlength="12"
+          placeholder="6 位字母数字"
+        />
+      </view>
+    </block>
+    <view class="field">
+      <text class="label">我的昵称</text>
+      <input class="input" value="{{nickName}}" data-field="nickName" bindinput="onInput" maxlength="20" />
+    </view>
+    <view class="muted note">
+      昵称只是让家人知道是谁记的这一笔，不需要授权任何个人信息。
+    </view>
+  </view>
+
+  <view class="error" wx:if="{{error}}">{{error}}</view>
+
+  <button class="btn btn-primary submit {{saving ? 'btn-disabled' : ''}}" bindtap="submit" disabled="{{saving}}">
+    {{saving ? '处理中…' : (mode === 'create' ? '建好，开始用' : '加入')}}
+  </button>
+
+  <view class="demo" wx:if="{{isMock}}" bindtap="useDemo">演示模式：直接用示例家庭体验一下 ›</view>
+
+  <view class="muted foot">
+    数据存在你自己的微信云开发环境里，只有加入这个家的成员能看到。
+  </view>
+  <view class="safe-bottom"></view>
+</view>

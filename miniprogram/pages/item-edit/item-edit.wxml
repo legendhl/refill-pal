@@ -1,0 +1,103 @@
+<view class="page">
+  <view class="card">
+    <view class="field">
+      <text class="label">叫什么</text>
+      <input
+        class="input"
+        placeholder="例如 抽纸"
+        value="{{form.name}}"
+        data-field="name"
+        bindinput="onInput"
+        maxlength="20"
+      />
+    </view>
+
+    <view class="field">
+      <text class="label">分类</text>
+      <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="picker">{{categories[categoryIndex]}} ›</view>
+      </picker>
+    </view>
+
+    <view class="field">
+      <text class="label">单位</text>
+      <picker mode="selector" range="{{units}}" value="{{unitIndex}}" bindchange="onUnitChange">
+        <view class="picker">{{units[unitIndex]}} ›</view>
+      </picker>
+    </view>
+
+    <view class="field">
+      <text class="label">品牌</text>
+      <input
+        class="input"
+        placeholder="选填，例如 清风"
+        value="{{form.brand}}"
+        data-field="brand"
+        bindinput="onInput"
+        maxlength="20"
+      />
+    </view>
+
+    <view class="field">
+      <text class="label">规格</text>
+      <input
+        class="input"
+        placeholder="选填，例如 3层120抽"
+        value="{{form.spec}}"
+        data-field="spec"
+        bindinput="onInput"
+        maxlength="20"
+      />
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{isCreate}}">
+    <view class="field">
+      <text class="label">现在家里还剩多少</text>
+      <input
+        class="input"
+        type="digit"
+        placeholder="没有就填 0"
+        value="{{form.baseQty}}"
+        data-field="baseQty"
+        bindinput="onInput"
+      />
+    </view>
+    <view class="note muted">已经在用的东西填上现有数量，它马上就能开始估算。</view>
+  </view>
+
+  <view class="card">
+    <view class="field">
+      <text class="label">大概能用多久</text>
+      <input
+        class="input"
+        type="number"
+        placeholder="选填，单位：天"
+        value="{{form.initEstimateDays}}"
+        data-field="initEstimateDays"
+        bindinput="onInput"
+      />
+    </view>
+    <view class="chips">
+      <text class="chip" data-days="7" bindtap="pickEstimate">一周</text>
+      <text class="chip" data-days="15" bindtap="pickEstimate">半个月</text>
+      <text class="chip" data-days="30" bindtap="pickEstimate">一个月</text>
+      <text class="chip" data-days="90" bindtap="pickEstimate">三个月</text>
+      <text class="chip" data-days="180" bindtap="pickEstimate">半年</text>
+    </view>
+    <view class="note muted" wx:if="{{hint}}">{{hint}}</view>
+    <view class="note muted" wx:else>填一个大概数字就行，纯粹是冷启动用。记满两三次购买之后，它会用你真实的消耗速度覆盖掉这个估计。</view>
+  </view>
+
+  <view class="footer">
+    <button class="btn btn-plain save-btn" bindtap="cancel">取消</button>
+    <button
+      class="btn btn-primary save-btn {{saving ? 'btn-disabled' : ''}}"
+      bindtap="save"
+      disabled="{{saving}}"
+    >
+      {{saving ? '保存中…' : '保存'}}
+    </button>
+  </view>
+  <view class="safe-bottom"></view>
+</view>

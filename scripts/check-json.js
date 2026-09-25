@@ -9,6 +9,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const ROOT = path.resolve(__dirname, '..');
 const MP = path.join(ROOT, 'miniprogram');
@@ -166,7 +167,24 @@ cfDirs.forEach((name) => {
 });
 notes.push(`检查了 ${cfDirs.length} 个云函数`);
 
-// ---------------------------------------------------- 6. 部署占位符是否还留着
+// ---------------------------------------------------- 6. 所有 JS 语法可编译
+
+const jsFiles = walk(ROOT, (f) => f.endsWith('.js') && f.indexOf('node_modules') < 0);
+let syntaxChecked = 0;
+jsFiles.forEach((file) => {
+  const source = fs.readFileSync(file, 'utf8');
+  try {
+    // 只编译不执行：能抓出语法错误、括号不配、误用保留字等
+    // eslint-disable-next-line no-new
+    new vm.Script(source, { filename: file });
+    syntaxChecked += 1;
+  } catch (e) {
+    fail(`JS 语法错误: ${path.relative(ROOT, file)} → ${e.message}`);
+  }
+});
+notes.push(`编译检查了 ${syntaxChecked} 个 JS 文件`);
+
+// ---------------------------------------------------- 7. 部署占位符是否还留着
 
 const configPath = path.join(MP, 'config.js');
 if (!fs.existsSync(configPath)) {

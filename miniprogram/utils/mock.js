@@ -137,8 +137,8 @@ function seed(base = new Date()) {
     ev('it-bag', 'purchase', 2, 210, { amount: 19.9, channel: '拼多多' }),
     ev('it-bag', 'purchase', 2, 90, { amount: 21.9, channel: '拼多多' }),
 
-    // 洗发水：只记过一次，还估不出速度
-    ev('it-shampoo', 'purchase', 1, 12, { amount: 89, channel: '京东' })
+    // 洗发水：只记过一次，还估不出速度（故意放在今天，保证本月统计不为空）
+    ev('it-shampoo', 'purchase', 1, 0, { amount: 89, channel: '京东' })
   ];
 
   return {
@@ -213,8 +213,14 @@ function views() {
   return core.resolveAll(state.items, groupEvents(), now(), { remindDays: settings().remindDays });
 }
 
+/**
+ * 单个物品的视图。刻意不走 views()（那里按列表口径排除归档物品），
+ * 否则归档后进详情页会报「找不到这个物品」。
+ */
 function viewOf(itemId) {
-  return views().find((v) => String(v._id) === String(itemId)) || null;
+  const item = findItem(itemId);
+  if (!item) return null;
+  return core.buildItemView(item, eventsOf(itemId), now(), { remindDays: settings().remindDays });
 }
 
 function findItem(itemId) {
@@ -569,6 +575,26 @@ const handlers = {
     });
     state.events = state.events.filter((e) => ids.indexOf(String(e._id)) < 0);
     return { removed: mine.map((e) => e._id), items: itemIds.map(viewOf).filter(Boolean) };
+  },
+
+  'purchase/update': async (payload) => {
+    const p = payload || {};
+    const target = state.events.find((e) => String(e._id) === String(p.eventId));
+    if (!target) return fail('EVENT_NOT_FOUND', '这条记录已经不存在了');
+    if (target.type !== 'purchase') return fail('INVALID_INPUT', '只有购买记录可以改金额或数量');
+    const patch = p.patch || {};
+    if (patch.amount !== undefined) {
+      const amount = Number(patch.amount);
+      target.amount = !Number.isFinite(amount) || amount === 0 ? null : amount;
+    }
+    if (patch.qty !== undefined) {
+      const qty = Number(patch.qty);
+      if (!Number.isFinite(qty) || qty <= 0) return fail('INVALID_INPUT', '数量必须是正数');
+      target.qty = qty;
+    }
+    if (patch.channel !== undefined) target.channel = patch.channel || null;
+    if (patch.note !== undefined) target.note = patch.note || null;
+    return { eventId: target._id, items: [viewOf(target.itemId)].filter(Boolean) };
   },
 
   'purchase/recent': async (payload) => {

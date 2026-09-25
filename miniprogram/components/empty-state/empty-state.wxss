@@ -1,0 +1,28 @@
+.empty-state {
+  padding: 72rpx 48rpx;
+  text-align: center;
+}
+
+.emoji {
+  font-size: 88rpx;
+  display: block;
+  margin-bottom: 20rpx;
+}
+
+.title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #6b5b52;
+  margin-bottom: 12rpx;
+}
+
+.desc {
+  font-size: 26rpx;
+  color: #9a8c84;
+  line-height: 1.6;
+}
+
+.action {
+  margin-top: 28rpx;
+  display: inline-block;
+}

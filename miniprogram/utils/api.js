@@ -14,7 +14,7 @@ function init(options = {}) {
   if (useMock) {
     // 延迟加载：真实模式下不把演示数据打进包
     mockLayer = require('./mock');
-    mockLayer.init();
+    mockLayer.init({ latency: options.latency });
   } else {
     mockLayer = null;
   }

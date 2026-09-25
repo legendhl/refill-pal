@@ -1,0 +1,26 @@
+<view
+  class="item-card {{compact ? 'is-compact' : ''}}"
+  style="border-left-color: {{card.color}}"
+  bindtap="onTap"
+  bindlongpress="onLongPress"
+  hover-class="item-card-hover"
+>
+  <view class="main">
+    <view class="line1">
+      <text class="name ellipsis">{{card.name}}</text>
+      <text class="badge" style="color: {{card.color}}; background: {{card.bg}}">{{card.badge}}</text>
+    </view>
+    <view class="line2">
+      <text class="remaining" style="color: {{card.color}}">{{card.remainingText}}</text>
+      <text class="dot" wx:if="{{card.stockText}}">·</text>
+      <text class="stock">{{card.stockText}}</text>
+    </view>
+    <view class="line3" wx:if="{{!compact}}">
+      <text class="meta">{{card.rateText}}</text>
+      <text class="meta" wx:if="{{showConfidence && confidenceText}}"> · {{confidenceText}}</text>
+      <text class="meta" wx:if="{{card.emptyAtText}}"> · {{card.emptyAtText}}用完</text>
+    </view>
+    <view class="hint" wx:if="{{card.specChanged}}">换过规格，建议盘点一次让估算更准</view>
+  </view>
+  <view class="arrow">›</view>
+</view>

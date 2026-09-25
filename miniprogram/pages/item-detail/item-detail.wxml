@@ -1,0 +1,66 @@
+<view class="page" wx:if="{{!loading}}">
+  <view class="card head" style="border-color: {{card.color}}">
+    <view class="head-top">
+      <text class="head-name">{{card.name}}</text>
+      <text class="badge" style="color: {{card.color}}; background: {{card.bg}}">{{card.badge}}</text>
+    </view>
+    <view class="head-stock" style="color: {{card.color}}">{{stockText}}</view>
+    <view class="head-remaining">{{remainingText}}<text wx:if="{{emptyAtText}}">（{{emptyAtText}}）</text></view>
+
+    <view class="facts">
+      <view class="fact">
+        <text class="fact-label">消耗速度</text>
+        <text class="fact-value">{{rateText}}</text>
+      </view>
+      <view class="fact">
+        <text class="fact-label">可信度</text>
+        <text class="fact-value">{{confidence}}</text>
+      </view>
+      <view class="fact">
+        <text class="fact-label">提醒线</text>
+        <text class="fact-value">剩 {{remindDays}} 天提醒</text>
+      </view>
+    </view>
+
+    <view class="basis">{{basisText}}</view>
+    <view class="basis warn" wx:if="{{card.specChanged}}">
+      这个物品换过规格（{{card.brand}}{{card.spec}}），建议做一次盘点让估算更准。
+    </view>
+  </view>
+
+  <view class="actions">
+    <button class="btn btn-primary grow-btn" bindtap="buy">记一笔购买</button>
+    <button class="btn btn-ghost grow-btn" bindtap="stocktake">盘点</button>
+    <button class="btn btn-plain grow-btn" bindtap="usedUp">用完了</button>
+  </view>
+
+  <view class="section-title">
+    <text>历史记录</text>
+    <text class="muted">长按可修改</text>
+  </view>
+
+  <view class="timeline" wx:if="{{timeline.length}}">
+    <view
+      class="tl-item"
+      wx:for="{{timeline}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindlongpress="editEvent"
+    >
+      <view class="tl-dot {{item.isPurchase ? 'dot-buy' : ''}} {{item.isClose ? 'dot-close' : ''}}"></view>
+      <view class="tl-body">
+        <view class="tl-title">{{item.title}}</view>
+        <view class="tl-sub muted" wx:if="{{item.subtitle}}">{{item.subtitle}}</view>
+      </view>
+      <view class="tl-date muted">{{item.dateText}}</view>
+    </view>
+  </view>
+  <view class="empty" wx:else>还没有记录。买了就点上面的「记一笔购买」。</view>
+
+  <view class="edit-row">
+    <button class="btn btn-plain btn-sm" bindtap="goEdit">编辑物品</button>
+    <button class="btn btn-plain btn-sm" bindtap="more">更多操作</button>
+  </view>
+</view>
+
+<view class="empty" wx:else>正在加载…</view>

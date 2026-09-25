@@ -1,0 +1,88 @@
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26rpx 0;
+  border-bottom: 2rpx solid #f7f1ec;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+  padding-right: 20rpx;
+}
+
+.row-label {
+  font-size: 30rpx;
+  color: #2f2723;
+  display: block;
+}
+
+.row-desc {
+  font-size: 23rpx;
+  display: block;
+  margin-top: 6rpx;
+  line-height: 1.5;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.step-btn {
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 60rpx;
+  text-align: center;
+  border-radius: 32rpx;
+  background: #fff0e8;
+  color: #ff7a45;
+  font-size: 36rpx;
+}
+
+.step-value {
+  width: 80rpx;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.time-picker {
+  font-size: 30rpx;
+  color: #2f2723;
+  flex-shrink: 0;
+}
+
+.quota {
+  margin-top: 24rpx;
+}
+
+.quota-low {
+  background: #fff8e1;
+  border: 2rpx solid #ffe9a8;
+}
+
+.quota-num {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #ff7a45;
+}
+
+.quota-desc {
+  margin-top: 12rpx;
+}
+
+.renew {
+  margin-top: 24rpx;
+  display: inline-block;
+}
+
+.save {
+  margin-top: 48rpx;
+}

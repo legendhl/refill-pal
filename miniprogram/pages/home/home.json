@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "item-card": "/components/item-card/item-card",
+    "empty-state": "/components/empty-state/empty-state"
+  },
+  "navigationBarTitleText": "待补货",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark"
+}

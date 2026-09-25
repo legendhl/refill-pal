@@ -1,0 +1,55 @@
+<view class="page" wx:if="{{!loading}}">
+  <view class="card">
+    <view class="row">
+      <view class="row-main">
+        <text class="row-label">提前几天提醒我</text>
+        <text class="row-desc muted">还剩这么多天的时候，就开始提醒你买</text>
+      </view>
+      <view class="stepper">
+        <text class="step-btn" data-delta="-1" bindtap="changeDays">−</text>
+        <text class="step-value">{{remindDays}}</text>
+        <text class="step-btn" data-delta="1" bindtap="changeDays">＋</text>
+      </view>
+    </view>
+
+    <view class="row">
+      <view class="row-main">
+        <text class="row-label">每天几点推</text>
+        <text class="row-desc muted">每天最多推一条汇总，不会一条条轰炸你</text>
+      </view>
+      <picker mode="time" value="{{pushTime}}" bindchange="onTimeChange">
+        <view class="time-picker">{{pushTime}} ›</view>
+      </picker>
+    </view>
+
+    <view class="row">
+      <view class="row-main">
+        <text class="row-label">开启提醒</text>
+        <text class="row-desc muted">关掉之后就只能自己进小程序看了</text>
+      </view>
+      <switch checked="{{pushEnabled}}" color="#FF7A45" bindchange="onSwitch" />
+    </view>
+  </view>
+
+  <view class="card quota {{lowQuota ? 'quota-low' : ''}}">
+    <view class="row-between">
+      <text class="row-label">提醒次数余额</text>
+      <text class="quota-num">{{quota}} 次</text>
+    </view>
+    <view class="row-desc muted quota-desc">
+      微信规定：用户每授权一次，小程序才能推一条消息。所以余额用完前需要再点一下续订。
+    </view>
+    <button class="btn btn-ghost btn-sm renew" bindtap="renew">续订提醒次数</button>
+  </view>
+
+  <button
+    class="btn btn-primary save {{(!changed || saving) ? 'btn-disabled' : ''}}"
+    bindtap="save"
+    disabled="{{!changed || saving}}"
+  >
+    {{saving ? '保存中…' : (changed ? '保存设置' : '已保存')}}
+  </button>
+  <view class="safe-bottom"></view>
+</view>
+
+<view class="empty" wx:else>正在加载…</view>

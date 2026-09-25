@@ -1,0 +1,84 @@
+.family-name {
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.invite {
+  margin-top: 28rpx;
+  border-top: 2rpx solid #f7f1ec;
+  padding-top: 28rpx;
+}
+
+.invite-label {
+  font-size: 24rpx;
+}
+
+.invite-code {
+  font-size: 56rpx;
+  font-weight: 700;
+  letter-spacing: 8rpx;
+  color: #ff7a45;
+  margin: 8rpx 0 20rpx;
+}
+
+.invite-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.invite-note {
+  font-size: 23rpx;
+  margin-top: 20rpx;
+  line-height: 1.6;
+}
+
+.list {
+  padding: 0 28rpx;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 0;
+  border-bottom: 2rpx solid #f7f1ec;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.member-main {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.member-name {
+  font-size: 30rpx;
+}
+
+.role-badge {
+  font-size: 21rpx;
+  color: #9a8c84;
+  background: #f7efe9;
+  margin-left: 16rpx;
+}
+
+.remove {
+  font-size: 26rpx;
+  color: #e5484d;
+  padding: 8rpx 12rpx;
+}
+
+.row-label {
+  font-size: 30rpx;
+}
+
+.row-label.danger {
+  color: #e5484d;
+}
+
+.row-value {
+  font-size: 26rpx;
+}

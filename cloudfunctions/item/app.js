@@ -9,17 +9,15 @@
 
 const kit = require('./shared/kit');
 
-/** 写入后重新解析该物品的视图，直接回给客户端，省一次往返 */
+/**
+ * 写入后重新解析该物品的视图，直接回给客户端，省一次往返。
+ * 用 loadItemDetail 而不是列表口径，归档物品也能拿到视图。
+ */
 async function viewAfterWrite(ctx, familyId, itemId) {
   const found = await kit.resolveFamily(ctx.db, ctx.openid);
-  const { views } = await kit.loadFamilyViews(ctx.db, found.family, ctx.now);
-  return views.find((v) => String(v._id) === String(itemId)) || null;
-}
-
-async function itemEvents(ctx, familyId, itemId) {
-  return kit.fetchAll(
-    ctx.db.collection('events').where({ familyId, itemId: String(itemId) }).orderBy('occurredAt', 'asc')
-  );
+  if (!found) return null;
+  const { view } = await kit.loadItemDetail(ctx.db, found.family, itemId, ctx.now);
+  return view;
 }
 
 const handlers = {
@@ -34,15 +32,12 @@ const handlers = {
     };
   },
 
-  /** 物品详情：视图 + 完整时间轴 */
+  /** 物品详情：视图 + 完整时间轴。归档物品也要能打开。 */
   async detail(ctx) {
     const { db, openid, payload, now } = ctx;
     const { family } = await kit.requireFamily(db, openid);
-    const item = await kit.requireOwnItem(db, family._id, payload.itemId);
-    const { views, settings } = await kit.loadFamilyViews(db, family, now);
-    const view = views.find((v) => String(v._id) === String(item._id)) || null;
-    const events = await itemEvents(ctx, family._id, item._id);
-    return { item: view, events, remindDays: settings.remindDays };
+    const { view, events, remindDays } = await kit.loadItemDetail(db, family, payload.itemId, now);
+    return { item: view, events, remindDays };
   },
 
   async create(ctx) {

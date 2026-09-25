@@ -1,0 +1,60 @@
+<view class="page" wx:if="{{!loading && family}}">
+  <view class="card">
+    <view class="row-between" bindtap="rename">
+      <text class="family-name">{{family.name}}</text>
+      <text class="muted" wx:if="{{isOwner}}">改名 ›</text>
+    </view>
+    <view class="invite">
+      <view class="invite-label muted">邀请码</view>
+      <view class="invite-code">{{inviteCode}}</view>
+      <view class="invite-actions">
+        <button class="btn btn-primary btn-sm" open-type="share">分享给家人</button>
+        <button class="btn btn-plain btn-sm" bindtap="copyCode">复制邀请码</button>
+      </view>
+      <view class="invite-note muted">家人在「创建/加入家庭」页输入这个码就能加入，数据立刻共享。</view>
+    </view>
+  </view>
+
+  <view class="section-title">
+    <text>成员</text>
+    <text class="muted">{{members.length}} 人</text>
+  </view>
+  <view class="card list">
+    <view class="row" wx:for="{{members}}" wx:key="_id">
+      <view class="member-main">
+        <text class="member-name">{{item.nickName}}</text>
+        <text class="badge role-badge">{{item.role === 'owner' ? '创建者' : '成员'}}</text>
+      </view>
+      <text
+        class="remove"
+        wx:if="{{isOwner && item._id !== myId}}"
+        data-id="{{item._id}}"
+        bindtap="removeMember"
+      >移出</text>
+    </view>
+  </view>
+
+  <view class="section-title">管理</view>
+  <view class="card list">
+    <view class="row" wx:if="{{isOwner}}" bindtap="rotate">
+      <text class="row-label">更换邀请码</text>
+      <text class="row-value muted">旧码立即失效 ›</text>
+    </view>
+    <view class="row" bindtap="leave">
+      <text class="row-label danger">退出家庭</text>
+      <text class="row-value muted">记录保留 ›</text>
+    </view>
+    <view class="row" wx:if="{{isOwner}}" bindtap="destroy">
+      <text class="row-label danger">删除家庭和全部数据</text>
+      <text class="row-value muted">›</text>
+    </view>
+  </view>
+  <view class="safe-bottom"></view>
+</view>
+
+<view class="empty" wx:elif="{{!loading}}">
+  <text class="empty-emoji">🏠</text>
+  <view>你还没有加入家庭</view>
+  <view class="muted">先去创建或加入一个家庭</view>
+</view>
+<view class="empty" wx:else>正在加载…</view>

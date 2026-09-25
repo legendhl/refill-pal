@@ -1,0 +1,105 @@
+.hero {
+  text-align: center;
+  padding: 60rpx 20rpx 40rpx;
+}
+
+.hero-emoji {
+  font-size: 100rpx;
+}
+
+.hero-title {
+  font-size: 46rpx;
+  font-weight: 700;
+  margin-top: 16rpx;
+}
+
+.hero-desc {
+  font-size: 27rpx;
+  color: #9a8c84;
+  margin-top: 16rpx;
+  line-height: 1.6;
+}
+
+.tabs {
+  display: flex;
+  background: #ffffff;
+  border-radius: 40rpx;
+  padding: 8rpx;
+  margin-bottom: 28rpx;
+  box-shadow: 0 4rpx 16rpx rgba(180, 130, 100, 0.08);
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  font-size: 29rpx;
+  color: #9a8c84;
+  padding: 18rpx 0;
+  border-radius: 32rpx;
+}
+
+.tab-active {
+  background: #fff0e8;
+  color: #ff7a45;
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 2rpx solid #f7f1ec;
+}
+
+.field:last-of-type {
+  border-bottom: none;
+}
+
+.label {
+  width: 180rpx;
+  font-size: 29rpx;
+  color: #6b5b52;
+  flex-shrink: 0;
+}
+
+.input {
+  flex: 1;
+  font-size: 31rpx;
+  text-align: right;
+}
+
+.code-input {
+  letter-spacing: 4rpx;
+  text-transform: uppercase;
+}
+
+.note {
+  font-size: 23rpx;
+  margin-top: 18rpx;
+  line-height: 1.6;
+}
+
+.error {
+  color: #e5484d;
+  font-size: 26rpx;
+  margin: 20rpx 8rpx 0;
+}
+
+.submit {
+  margin-top: 40rpx;
+}
+
+.demo {
+  text-align: center;
+  font-size: 26rpx;
+  color: #ff7a45;
+  margin-top: 32rpx;
+  padding: 16rpx;
+}
+
+.foot {
+  text-align: center;
+  font-size: 23rpx;
+  margin-top: 32rpx;
+  line-height: 1.6;
+}
