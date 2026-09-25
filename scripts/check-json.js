@@ -207,6 +207,65 @@ jsFiles.forEach((file) => {
 });
 notes.push(`编译检查了 ${syntaxChecked} 个 JS 文件`);
 
+// ---------------------------------------------------- 6.5 WXML 标签配对
+
+/**
+ * 极简 WXML 结构检查：标签必须成对闭合。
+ * 少一个 </view> 在开发者工具里是编译错误，但只有打开工具才看得到，
+ * 所以这里静态查一遍。属性值里可能出现 >（如 wx:if="{{a > b}}"），
+ * 所以扫描时要跳过引号内的内容。
+ */
+function checkWxmlBalance(source) {
+  const problems = [];
+  const stack = [];
+  let i = 0;
+  while (i < source.length) {
+    const lt = source.indexOf('<', i);
+    if (lt < 0) break;
+    if (source.startsWith('<!--', lt)) {
+      const end = source.indexOf('-->', lt);
+      i = end < 0 ? source.length : end + 3;
+      continue;
+    }
+    let j = lt + 1;
+    let quote = null;
+    while (j < source.length) {
+      const ch = source[j];
+      if (quote) {
+        if (ch === quote) quote = null;
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+      } else if (ch === '>') {
+        break;
+      }
+      j += 1;
+    }
+    if (j >= source.length) {
+      problems.push('有标签没有闭合的 ">"');
+      break;
+    }
+    const raw = source.slice(lt + 1, j).trim();
+    i = j + 1;
+    if (raw.startsWith('/')) {
+      const name = raw.slice(1).trim();
+      const top = stack.pop();
+      if (top !== name) problems.push(`</${name}> 与最近的开标签 <${top || '无'}> 不匹配`);
+    } else if (!raw.endsWith('/')) {
+      const name = raw.split(/[\s]/)[0];
+      if (name) stack.push(name);
+    }
+  }
+  if (stack.length) problems.push(`标签没有闭合：${stack.join(' > ')}`);
+  return problems;
+}
+
+const wxmlFiles = walk(MP, (f) => f.endsWith('.wxml'));
+wxmlFiles.forEach((file) => {
+  const problems = checkWxmlBalance(fs.readFileSync(file, 'utf8'));
+  problems.forEach((p) => fail(`WXML 结构问题 ${path.relative(ROOT, file)}: ${p}`));
+});
+notes.push(`检查了 ${wxmlFiles.length} 个 WXML 的标签配对`);
+
 // ---------------------------------------------------- 7. 部署占位符是否还留着
 
 const configPath = path.join(MP, 'config.js');

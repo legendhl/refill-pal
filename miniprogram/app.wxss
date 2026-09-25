@@ -161,6 +161,10 @@ page {
   margin-bottom: 2rpx;
 }
 
+.fab-text {
+  font-size: 24rpx;
+}
+
 /* ---------- 离线/提示条 ---------- */
 .banner {
   background: #FFF4E5;

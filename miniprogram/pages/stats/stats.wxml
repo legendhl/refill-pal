@@ -85,21 +85,21 @@
       <text class="muted" bindtap="toggleRank">{{showAllRank ? '收起' : '全部'}}</text>
     </view>
     <view class="card">
-      <view
-        class="rank-row"
-        wx:for="{{view.rank}}"
-        wx:key="itemId"
-        wx:if="{{showAllRank || index < 5}}"
-        data-id="{{item.itemId}}"
-        bindtap="goItem"
-      >
-        <text class="rank-index">{{index + 1}}</text>
-        <view class="rank-main">
-          <text class="rank-name">{{item.name}}</text>
-          <text class="rank-sub muted">{{item.qtyText}} · {{item.countText}}</text>
+      <block wx:for="{{view.rank}}" wx:key="itemId">
+        <view
+          class="rank-row"
+          wx:if="{{showAllRank || index < 5}}"
+          data-id="{{item.itemId}}"
+          bindtap="goItem"
+        >
+          <text class="rank-index">{{index + 1}}</text>
+          <view class="rank-main">
+            <text class="rank-name">{{item.name}}</text>
+            <text class="rank-sub muted">{{item.qtyText}} · {{item.countText}}</text>
+          </view>
+          <text class="rank-amount">{{item.amountText}}</text>
         </view>
-        <text class="rank-amount">{{item.amountText}}</text>
-      </view>
+      </block>
     </view>
   </block>
 
