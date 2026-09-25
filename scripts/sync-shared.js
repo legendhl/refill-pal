@@ -63,6 +63,23 @@ function main() {
     `[sync-shared] 完成：${targets.length} 个云函数 × ${sources.length} 个共享文件，` +
       `共 ${checked} 个文件${written ? `，更新了 ${written} 个` : '，全部已是最新'}`
   );
+
+  // core.js 额外复制一份到小程序端：**只给 utils/mock.js 用**（演示模式没有服务端，
+  // 只能在小程序里算）。这样演示模式与真实云端是同一套算法，不会出现两套行为。
+  const mpCore = path.join(ROOT, 'miniprogram', 'utils', 'core.js');
+  const coreSource = fs.readFileSync(path.join(SHARED_DIR, 'core.js'), 'utf8');
+  const banner =
+    '/* 由 scripts/sync-shared.js 自动生成，请勿直接修改。\n' +
+    ' * 源文件：cloudfunctions/_shared/core.js\n' +
+    ' * 小程序端仅 utils/mock.js（演示模式）使用；真实模式下库存一律由云端算好下发。\n' +
+    ' */\n';
+  const wanted = banner + coreSource;
+  const mpCurrent = fs.existsSync(mpCore) ? fs.readFileSync(mpCore, 'utf8') : null;
+  if (mpCurrent !== wanted) {
+    fs.mkdirSync(path.dirname(mpCore), { recursive: true });
+    fs.writeFileSync(mpCore, wanted);
+    console.log('[sync-shared] 更新 miniprogram/utils/core.js（仅供演示模式使用）');
+  }
 }
 
 main();

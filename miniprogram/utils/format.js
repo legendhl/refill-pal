@@ -10,8 +10,12 @@ function toDate(value) {
   if (value instanceof Date) return value;
   if (typeof value === 'number') return new Date(value);
   if (typeof value === 'string') {
-    // iOS 不支持 '2026-09-25 10:00:00'，统一换成 ISO 风格
-    return new Date(value.replace(/-/g, '/').replace('T', ' ').replace(/\.\d+Z?$/, ''));
+    const s = value.trim();
+    // 标准 ISO（带 T，可能带 Z 或时区偏移）必须交给原生解析：
+    // 带 Z 的是 UTC 时刻，自己拆字符串会整体偏移时区导致日期差一天。
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return new Date(s);
+    // 'YYYY-MM-DD HH:mm:ss' 这种（iOS 不支持）换成斜杠格式再解析
+    return new Date(s.replace(/-/g, '/'));
   }
   return new Date(NaN);
 }
@@ -79,8 +83,9 @@ function remainingDaysText(days) {
   if (d < 1) return '今天大概就用完了';
   if (d < 1.5) return '明天大概用完';
   const whole = Math.floor(d);
-  if (whole <= 7) return `预计 ${whole} 天后用完`;
-  if (whole <= 30) return `预计 ${Math.round(whole / 7)} 周后用完`;
+  // 10 天说成「1 周」会少算 3 天，对补货提醒来说太模糊，所以 2 周以内一律按天说
+  if (whole <= 13) return `预计 ${whole} 天后用完`;
+  if (whole <= 45) return `预计 ${Math.round(whole / 7)} 周后用完`;
   return `预计 ${Math.round(whole / 30)} 个月后用完`;
 }
 

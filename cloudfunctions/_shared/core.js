@@ -42,9 +42,12 @@ function toDate(value) {
   if (value instanceof Date) return value;
   if (typeof value === 'number') return new Date(value);
   if (typeof value === 'string') {
-    // 兼容 '2026-09-25 10:00:00'（iOS / 部分运行时不支持）与 ISO 字符串
-    const normalized = value.indexOf('T') >= 0 ? value : value.replace(/-/g, '/');
-    return new Date(normalized);
+    const s = value.trim();
+    // 标准 ISO（带 T，可能带 Z 或时区偏移）必须交给原生解析：
+    // 带 Z 的是 UTC 时刻，自己拆字符串会整体偏移时区导致日期差一天。
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return new Date(s);
+    // 'YYYY-MM-DD HH:mm:ss' 这种（iOS 不支持）换成斜杠格式再解析
+    return new Date(s.replace(/-/g, '/'));
   }
   if (value && typeof value === 'object' && value.$date) return new Date(value.$date);
   return new Date(NaN);
