@@ -31,6 +31,11 @@ exports.main = async (event) => {
 
   if (isTimerEvent(event)) {
     const summary = await runDaily({ db, now, send });
+    // 总开关关着的时候每小时都会走到这里，日志只留一行，别刷屏
+    if (summary.disabled) {
+      console.log('[notify] 微信推送总开关已关闭（miniprogram/config.js 的 PUSH_ENABLED），跳过');
+      return summary;
+    }
     console.log('[notify] 每日检查完成', JSON.stringify(summary));
     return summary;
   }

@@ -91,3 +91,21 @@
 .row-value {
   font-size: 27rpx;
 }
+
+/* 推送总开关关闭时的说明卡 */
+.push-off {
+  background: #FBF6F2;
+}
+
+.push-off-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #6B5B52;
+  display: block;
+}
+
+.push-off-desc {
+  display: block;
+  margin-top: 10rpx;
+  line-height: 1.6;
+}

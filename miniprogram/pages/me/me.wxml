@@ -10,6 +10,10 @@
   <view class="banner" wx:if="{{isMock}}">
     当前是<text class="strong">演示模式</text>，数据只存在这台手机上。按 docs/deploy.md 开通云开发后，把 config.js 里的 USE_MOCK 改成 false，家人就能共享同一份数据了。
   </view>
+  <view class="banner" wx:if="{{!pushFeatureOn}}">
+    微信推送功能当前是<text class="strong">关闭</text>状态（config.js 的 PUSH_ENABLED）。
+    首页的「该买了」清单照常工作，只是不会发微信消息。
+  </view>
   <view class="banner banner-error" wx:if="{{!isMock && !envConfigured}}">
     config.js 里的云开发环境 ID 还是占位符，云函数调不通。请看 docs/deploy.md 第 2 步。
   </view>
@@ -22,9 +26,9 @@
     </view>
     <view class="row" bindtap="goSettings">
       <text class="row-label">提醒设置</text>
-      <text class="row-value muted">{{pushEnabled ? pushTime : '已关闭'}} ›</text>
+      <text class="row-value muted">{{pushFeatureOn ? (pushEnabled ? pushTime : '已关闭') : '推送总开关关闭'}} ›</text>
     </view>
-    <view class="row">
+    <view class="row" wx:if="{{pushFeatureOn}}">
       <text class="row-label">提醒次数余额</text>
       <text class="row-value muted">{{quota}} 次 ›</text>
     </view>

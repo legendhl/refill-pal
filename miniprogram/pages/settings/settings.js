@@ -21,7 +21,9 @@ Page({
     quota: 0,
     lowQuota: false,
     saving: false,
-    changed: false
+    changed: false,
+    /** 微信推送总开关（config.js 里的 PUSH_ENABLED） */
+    pushFeatureOn: config.PUSH_ENABLED
   },
 
   onShow() {
@@ -63,6 +65,7 @@ Page({
 
   /** 预览：不至于为了确认模板字段对不对，等到第二天早上 */
   async preview() {
+    if (!this.data.pushFeatureOn) return;
     const res = await api.call('notify', 'preview');
     if (!res.ok) {
       api.showError(new Error(res.message));
@@ -116,10 +119,11 @@ Page({
   },
 
   async renew() {
+    if (!this.data.pushFeatureOn) return;
     const templateId = config.SUBSCRIBE_TEMPLATE_ID;
 
     if (api.isMock()) {
-      await api.call('family', 'subscribe', { count: config.SUBSCRIBE_BATCH });
+      await api.call('family', 'subscribe', { count: config.SUBSCRIBE_BATCH, templateId });
       wx.showToast({ title: `已续订 ${config.SUBSCRIBE_BATCH} 次（演示）`, icon: 'none' });
       this.load();
       return;
@@ -138,7 +142,8 @@ Page({
       tmplIds: [templateId],
       success: async (res) => {
         if (res[templateId] === 'accept') {
-          await api.call('family', 'subscribe', { count: 1 });
+          // 模板 ID 要一起报上去，否则 notify 云函数无从发送
+          await api.call('family', 'subscribe', { count: 1, templateId });
           wx.showToast({ title: '已续订 1 次', icon: 'none' });
         } else {
           wx.showToast({ title: '没有订阅成功', icon: 'none' });

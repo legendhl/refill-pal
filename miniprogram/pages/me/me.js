@@ -19,6 +19,7 @@ Page({
     pushEnabled: true,
     isMock: false,
     envConfigured: true,
+    pushFeatureOn: config.PUSH_ENABLED,
     version: '1.0.0'
   },
 
@@ -48,7 +49,8 @@ Page({
       pushTime: settings.pushTime || '09:00',
       pushEnabled: settings.pushEnabled !== false,
       isMock: api.isMock(),
-      envConfigured: config.ENV_ID.indexOf('YOUR') !== 0
+      envConfigured: config.ENV_ID.indexOf('YOUR') !== 0,
+      pushFeatureOn: config.PUSH_ENABLED
     });
   },
 

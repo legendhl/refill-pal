@@ -3,7 +3,7 @@
     <view class="row">
       <view class="row-main">
         <text class="row-label">提前几天提醒我</text>
-        <text class="row-desc muted">还剩这么多天的时候，就开始提醒你买</text>
+        <text class="row-desc muted">{{pushFeatureOn ? '还剩这么多天的时候，就开始提醒你买' : '还剩这么多天的时候，就出现在首页的「该买了」里'}}</text>
       </view>
       <view class="stepper">
         <text class="step-btn" data-delta="-1" bindtap="changeDays">−</text>
@@ -12,7 +12,7 @@
       </view>
     </view>
 
-    <view class="row">
+    <view class="row" wx:if="{{pushFeatureOn}}">
       <view class="row-main">
         <text class="row-label">每天几点推</text>
         <text class="row-desc muted">每天最多推一条汇总，不会一条条轰炸你。只能选整点。</text>
@@ -22,7 +22,7 @@
       </picker>
     </view>
 
-    <view class="row">
+    <view class="row" wx:if="{{pushFeatureOn}}">
       <view class="row-main">
         <text class="row-label">开启提醒</text>
         <text class="row-desc muted">关掉之后就只能自己进小程序看了</text>
@@ -31,7 +31,7 @@
     </view>
   </view>
 
-  <view class="card list">
+  <view class="card list" wx:if="{{pushFeatureOn}}">
     <view class="row" bindtap="preview">
       <view class="row-main">
         <text class="row-label">预览提醒内容</text>
@@ -41,7 +41,14 @@
     </view>
   </view>
 
-  <view class="card quota {{lowQuota ? 'quota-low' : ''}}">
+  <view class="card push-off" wx:else>
+    <text class="push-off-title">微信推送暂时关闭</text>
+    <text class="row-desc muted push-off-desc">
+      「该买了」的清单仍然会在首页按时出现，只是不会给你发微信消息。
+    </text>
+  </view>
+
+  <view class="card quota {{lowQuota ? 'quota-low' : ''}}" wx:if="{{pushFeatureOn}}">
     <view class="row-between">
       <text class="row-label">提醒次数余额</text>
       <text class="quota-num">{{quota}} 次</text>

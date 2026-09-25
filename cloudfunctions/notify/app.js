@@ -14,6 +14,13 @@
 const core = require('./shared/core');
 const kit = require('./shared/kit');
 
+/**
+ * 微信推送总开关（与 miniprogram/config.js 的 PUSH_ENABLED 保持一致）。
+ * 关掉时定时器即使被唤醒也什么都不做，不会读库、不会发消息。
+ * scripts/check-json.js 会校验两处一致 —— 只改一处会直接被拦下来。
+ */
+const PUSH_ENABLED = false;
+
 /** 这些错误码意味着「不用再给这个人发了」 */
 const BLOCKED_CODES = [43101];
 /** 这些错误码说明模板配错了，属于开发期问题，要显式记下来 */
@@ -153,8 +160,12 @@ async function writeLog(db, data) {
   }
 }
 
-/** 每日总入口：遍历所有家庭 */
-async function runDaily({ db, now, send }) {
+/** 每日总入口：遍历所有家庭。enabled 默认取总开关，测试里可显式覆盖 */
+async function runDaily({ db, now, send, enabled }) {
+  if (!(enabled === undefined ? PUSH_ENABLED : enabled)) {
+    return { disabled: true, reason: 'PUSH_DISABLED', date: kit.dateKey(now), familyCount: 0, pushedCount: 0, sentCount: 0, results: [] };
+  }
+
   const families = await kit.fetchAll(db.collection('families'));
   const results = [];
   for (let i = 0; i < families.length; i += 1) {
@@ -207,6 +218,7 @@ function createSender(cloud) {
 }
 
 module.exports = {
+  PUSH_ENABLED,
   pushFamily,
   runDaily,
   createSender,

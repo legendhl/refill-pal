@@ -299,6 +299,34 @@ if (fs.existsSync(projectConfigPath)) {
   }
 }
 
+// ---------------------------------------------------- 7.5 推送总开关两处必须一致
+
+/**
+ * 客户端(界面)与云函数(发送)各有一份 PUSH_ENABLED。只改一处会出现
+ * 「界面显示已打开、云端不发」这种最难查的问题，所以静态校验两者一致。
+ */
+function readPushFlag(file, pattern) {
+  if (!fs.existsSync(file)) return null;
+  const m = pattern.exec(fs.readFileSync(file, 'utf8'));
+  return m ? m[1] === 'true' : null;
+}
+
+const clientPush = readPushFlag(path.join(MP, 'config.js'), /PUSH_ENABLED:\s*(true|false)/);
+const cloudPush = readPushFlag(path.join(CF, 'notify', 'app.js'), /const PUSH_ENABLED\s*=\s*(true|false)/);
+
+if (clientPush === null) {
+  fail('miniprogram/config.js 里找不到 PUSH_ENABLED');
+} else if (cloudPush === null) {
+  fail('cloudfunctions/notify/app.js 里找不到 PUSH_ENABLED');
+} else if (clientPush !== cloudPush) {
+  fail(
+    `推送总开关两处不一致：config.js 是 ${clientPush}，notify/app.js 是 ${cloudPush}。` +
+      '必须同时改（只改一处会出现「界面说已打开、实际不发」）'
+  );
+} else {
+  notes.push(`推送总开关：${clientPush ? '已打开' : '已关闭（两处一致）'}`);
+}
+
 // ---------------------------------------------------- 输出
 
 console.log('');

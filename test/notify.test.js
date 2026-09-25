@@ -95,11 +95,46 @@ function recorder(results) {
 
 // ============================================================ 正常路径
 
+test('【总开关】关闭时定时任务什么都不做', async () => {
+  const { db } = await setup({ quota: 2 });
+  const { send, sent } = recorder();
+
+  // 不传 enabled，用的就是模块里的总开关
+  const summary = await notify.runDaily({ db, now: PUSH_TIME, send });
+
+  assert.equal(summary.disabled, true);
+  assert.equal(summary.reason, 'PUSH_DISABLED');
+  assert.equal(summary.familyCount, 0, '关掉时连家庭列表都不查');
+  assert.equal(sent.length, 0);
+  assert.equal(db._dump('pushLogs').length, 0, '不留日志，免得以后排查时被误导');
+  assert.equal(
+    db._dump('members').find((m) => m.openid === 'openid-dad').subQuota.remaining,
+    2,
+    '不该扣额度'
+  );
+});
+
+test('【总开关】客户端与云函数两处必须一致', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const configText = fs.readFileSync(
+    path.join(__dirname, '..', 'miniprogram', 'config.js'),
+    'utf8'
+  );
+  const m = /PUSH_ENABLED:\s*(true|false)/.exec(configText);
+  assert.ok(m, 'miniprogram/config.js 里必须有 PUSH_ENABLED');
+  assert.equal(
+    m[1] === 'true',
+    notify.PUSH_ENABLED,
+    '只改一处会导致「界面说已打开、实际不发消息」，必须同时改'
+  );
+});
+
 test('到点且有待补货 → 推一条汇总，扣一次额度，写一条日志', async () => {
   const { db } = await setup({ quota: 2 });
   const { send, sent } = recorder();
 
-  const summary = await notify.runDaily({ db, now: PUSH_TIME, send });
+  const summary = await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
 
   assert.equal(summary.familyCount, 1);
   assert.equal(summary.pushedCount, 1);
@@ -130,7 +165,7 @@ test('多个成员各自收到，额度各自扣', async () => {
   const { db } = await setup({ quota: 2, momQuota: 1 });
   const { send, sent } = recorder();
 
-  const summary = await notify.runDaily({ db, now: PUSH_TIME, send });
+  const summary = await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
 
   assert.equal(summary.sentCount, 2);
   assert.deepEqual(sent.map((s) => s.touser).sort(), ['openid-dad', 'openid-mom']);
@@ -145,7 +180,7 @@ test('没到设定的时间点 → 不推、不写日志（每小时都会醒来
   const { db } = await setup();
   const { send, sent } = recorder();
 
-  const summary = await notify.runDaily({ db, now: EARLY, send });
+  const summary = await notify.runDaily({ db, now: EARLY, send, enabled: true });
 
   assert.equal(summary.pushedCount, 0);
   assert.equal(summary.results[0].reason, 'NOT_YET');
@@ -157,7 +192,7 @@ test('没有需要补货的东西 → 完全不打扰，也不写日志', async 
   const { db } = await setup({ withRefill: false });
   const { send, sent } = recorder();
 
-  const summary = await notify.runDaily({ db, now: PUSH_TIME, send });
+  const summary = await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
 
   assert.equal(summary.results[0].reason, 'NOTHING_TO_BUY');
   assert.equal(sent.length, 0);
@@ -167,7 +202,7 @@ test('没有需要补货的东西 → 完全不打扰，也不写日志', async 
 test('用户关掉了提醒 → 不推', async () => {
   const { db } = await setup({ pushEnabled: false });
   const { send, sent } = recorder();
-  const summary = await notify.runDaily({ db, now: PUSH_TIME, send });
+  const summary = await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
   assert.equal(summary.results[0].reason, 'DISABLED');
   assert.equal(sent.length, 0);
 });
@@ -175,7 +210,7 @@ test('用户关掉了提醒 → 不推', async () => {
 test('还没拿到模板 ID（用户没点过续订）→ 不推，并说明原因', async () => {
   const { db } = await setup({ templateId: null });
   const { send, sent } = recorder();
-  const summary = await notify.runDaily({ db, now: PUSH_TIME, send });
+  const summary = await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
   assert.equal(summary.results[0].reason, 'NO_TEMPLATE');
   assert.equal(sent.length, 0);
 });
@@ -185,11 +220,11 @@ test('额度用完了 → 不推，但要写日志留下痕迹（方便排查为
   const { send, sent } = recorder();
 
   // 第一天把仅有的 1 次额度用掉
-  const day1 = await notify.runDaily({ db, now: PUSH_TIME, send });
+  const day1 = await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
   assert.equal(day1.sentCount, 1);
 
   // 第二天就没额度了
-  const day2 = await notify.runDaily({ db, now: NEXT_DAY, send });
+  const day2 = await notify.runDaily({ db, now: NEXT_DAY, send, enabled: true });
   assert.equal(day2.results[0].reason, 'NO_QUOTA');
   assert.equal(sent.length, 1, '没额度就不能发');
 
@@ -207,8 +242,8 @@ test('【幂等】同一天被触发多次，只会推一次', async () => {
   const { db } = await setup({ quota: 3 });
   const { send, sent } = recorder();
 
-  const first = await notify.runDaily({ db, now: PUSH_TIME, send });
-  const second = await notify.runDaily({ db, now: new Date(PUSH_TIME.getTime() + 60 * 1000), send });
+  const first = await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
+  const second = await notify.runDaily({ db, now: new Date(PUSH_TIME.getTime() + 60 * 1000), send, enabled: true });
 
   assert.equal(first.pushedCount, 1);
   assert.equal(second.pushedCount, 0);
@@ -226,8 +261,8 @@ test('第二天可以正常推', async () => {
   const { db } = await setup({ quota: 3 });
   const { send } = recorder();
 
-  await notify.runDaily({ db, now: PUSH_TIME, send });
-  const day2 = await notify.runDaily({ db, now: NEXT_DAY, send });
+  await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
+  const day2 = await notify.runDaily({ db, now: NEXT_DAY, send, enabled: true });
 
   assert.equal(day2.pushedCount, 1);
   const logs = db._dump('pushLogs');
@@ -240,7 +275,7 @@ test('用户拒收（43101）→ 该成员额度清零并标记，其他人不�
   const { db } = await setup({ quota: 2, momQuota: 2 });
   const { send } = recorder([{ ok: false, errCode: 43101, errMsg: 'user refuse to accept the msg' }, { ok: true }]);
 
-  const summary = await notify.runDaily({ db, now: PUSH_TIME, send });
+  const summary = await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
 
   assert.equal(summary.pushedCount, 1, '还有一个成员收到了');
   assert.equal(summary.sentCount, 1);
@@ -260,7 +295,7 @@ test('模板参数不合法（47003）→ 记录成模板错误，不能误判�
   const { db } = await setup({ quota: 2 });
   const { send } = recorder([{ ok: false, errCode: 47003, errMsg: 'argument invalid' }]);
 
-  const summary = await notify.runDaily({ db, now: PUSH_TIME, send });
+  const summary = await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
 
   assert.equal(summary.pushedCount, 1);
   assert.equal(summary.results[0].reason, 'ALL_FAILED');
@@ -281,7 +316,7 @@ test('发送抛异常不能把整个定时任务带崩', async () => {
     throw new Error('网络断了');
   };
 
-  const summary = await notify.runDaily({ db, now: PUSH_TIME, send });
+  const summary = await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
 
   assert.equal(summary.familyCount, 1);
   assert.equal(summary.pushedCount, 0);
@@ -306,7 +341,7 @@ test('一个家庭出错不影响其他家庭', async () => {
   ]);
 
   const { send, sent } = recorder();
-  const summary = await notify.runDaily({ db, now, send });
+  const summary = await notify.runDaily({ db, now, send, enabled: true });
 
   assert.equal(summary.familyCount, 2);
   assert.equal(summary.pushedCount, 1, '好家庭照常推送');
@@ -352,7 +387,7 @@ test('推送文案：物品很多时截断，且带上最紧急的一条', async
   const { db } = await setup({ quota: 1, extraItems: extras });
   const { send, sent } = recorder();
 
-  await notify.runDaily({ db, now: PUSH_TIME, send });
+  await notify.runDaily({ db, now: PUSH_TIME, send, enabled: true });
 
   const payload = sent[0].data;
   assert.ok(payload.thing1.value.length <= 20);

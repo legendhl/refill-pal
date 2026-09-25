@@ -69,10 +69,22 @@ refillPal/
 | 命令 | 作用 |
 | --- | --- |
 | `npm test` | 跑全部测试（会自动先 sync） |
-| `npm run check` | 结构校验：页面完整性、组件路径、JS 语法、定时触发器 |
+| `npm run check` | 结构校验：页面完整性、组件路径、JS 语法、WXML 配对、定时触发器、推送总开关一致性 |
 | `npm run verify` | sync + check + test，提交前跑这个 |
 | `npm run sync` | 把 `cloudfunctions/_shared/` 复制到各云函数（改了共享代码后必跑） |
 | `node test-utils/e2e-screenshots.js` | 驱动微信开发者工具跑一遍真机模拟器并截图（需要开启工具的服务端口） |
+
+## 微信推送总开关
+
+`config.js` 里的 `PUSH_ENABLED` 默认是 **false**：整块订阅消息功能是收起来的 ——
+首页不出现续订提示，「提醒设置」里也不显示推送时间/预览/续订，云函数不会发消息。
+**首页的「该买了」清单照常工作**，因为「提前几天提醒我」决定的是 App 内清单的时机，与推送无关。
+
+打开方式（两处必须同时改，`npm run check` 会校验一致性）：
+
+1. `miniprogram/config.js` → `PUSH_ENABLED: true`
+2. `cloudfunctions/notify/app.js` → `const PUSH_ENABLED = true;`
+3. 按 `docs/deploy.md` 第 5 步申请订阅消息模板并填 `SUBSCRIBE_TEMPLATE_ID`
 
 ## 两个关键设计
 

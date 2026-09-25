@@ -117,7 +117,8 @@ Page({
       hasItems: Boolean(data.summary && data.summary.itemCount),
       emptyRefill: vm.emptyRefillText(data.summary ? data.summary.itemCount : 0),
       quota,
-      showQuotaTip: pushOn && quota < config.LOW_QUOTA_THRESHOLD,
+      // 总开关关着的时候，整块推送功能都不出现在界面上
+      showQuotaTip: config.PUSH_ENABLED && pushOn && quota < config.LOW_QUOTA_THRESHOLD,
       remindDays: data.remindDays
     });
   },
@@ -408,12 +409,16 @@ Page({
   // ------------------------------------------------------------ 订阅提醒
 
   async requestSubscribe() {
+    if (!config.PUSH_ENABLED) return;
     const templateId = config.SUBSCRIBE_TEMPLATE_ID;
     const notConfigured = !templateId || templateId.indexOf('YOUR') === 0;
 
     if (api.isMock()) {
       // 演示模式下没有真实模板，这里走一遍流程让你看到界面反应
-      await api.call('family', 'subscribe', { count: config.SUBSCRIBE_BATCH });
+      await api.call('family', 'subscribe', {
+        count: config.SUBSCRIBE_BATCH,
+        templateId
+      });
       wx.showToast({ title: `已续订 ${config.SUBSCRIBE_BATCH} 次（演示）`, icon: 'none' });
       this.load({ silent: true });
       return;
@@ -432,7 +437,9 @@ Page({
       tmplIds: [templateId],
       success: async (res) => {
         if (res[templateId] === 'accept') {
-          await api.call('family', 'subscribe', { count: 1 });
+          // 必须把模板 ID 一起报上去：notify 云函数靠家庭设置里的这个 ID 发消息，
+          // 不传的话云端拿不到模板，推送永远发不出去。
+          await api.call('family', 'subscribe', { count: 1, templateId });
           wx.showToast({ title: '已续订 1 次提醒', icon: 'none' });
           this.load({ silent: true });
         } else {

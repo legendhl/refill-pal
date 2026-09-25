@@ -20,6 +20,20 @@ module.exports = {
    */
   USE_MOCK: true,
 
+  /**
+   * 微信推送（订阅消息）总开关。
+   *
+   * false = 整块功能收起来：首页不出现续订提示，「提醒设置」里也不显示
+   *         推送时间/开启提醒/预览/续订这些入口，云函数也不会发消息。
+   *         「提前几天提醒我」仍然生效 —— 它决定首页「该买了」清单的时机，
+   *         即使不推送，App 内的提醒照样工作。
+   *
+   * 想打开时：把这里和 cloudfunctions/notify/app.js 里的 PUSH_ENABLED
+   * 同时改成 true（scripts/check-json.js 会校验两处一致，只改一处会报错），
+   * 并完成 docs/deploy.md 第 5 步的订阅消息模板申请。
+   */
+  PUSH_ENABLED: false,
+
   /** 默认提前几天提醒补货 */
   DEFAULT_REMIND_DAYS: 3,
 

@@ -25,6 +25,8 @@ const OUT = path.join(PROJECT, 'screenshots');
 const WAIT = 2600;
 
 const results = [];
+/** 海报临时文件路径，最后一步预览用 */
+let posterFilePath = null;
 
 function check(name, condition, detail) {
   results.push({ name, ok: Boolean(condition), detail });
@@ -72,7 +74,15 @@ async function main() {
     check('首页有 2 样待补货', homeData.refill.length === 2, `${homeData.refill.length} 样：${homeData.refill.map((c) => c.name).join('、')}`);
     check('待补货里有已用完的', homeData.refill.some((c) => c.badge === '已用完'));
     check('首页有 4 样还够用', homeData.ok.length === 4, homeData.ok.map((c) => c.name).join('、'));
-    check('额度不足时出现续订提示', homeData.showQuotaTip === true);
+    // 断言跟着总开关走：打开时该出现续订卡，关闭时该收起来
+    const pushOn = /PUSH_ENABLED:\s*true/.test(
+      fs.readFileSync(path.join(PROJECT, 'miniprogram', 'config.js'), 'utf8')
+    );
+    check(
+      pushOn ? '推送打开：额度不足时出现续订卡' : '推送关闭：不出现续订卡',
+      homeData.showQuotaTip === pushOn,
+      `PUSH_ENABLED=${pushOn}`
+    );
     await shot(mp, '01-home');
 
     // 记一笔面板
@@ -103,17 +113,7 @@ async function main() {
     await sleep(3000);
     const posterPath = (await home.data()).posterPath;
     check('清单海报能画出来', typeof posterPath === 'string' && posterPath.length > 0, String(posterPath));
-    if (posterPath) {
-      // 在模拟器里把生成的图预览出来，这样截屏就能看到 canvas 实际画了什么
-      await mp.evaluate((src) => {
-        wx.previewImage({ urls: [src], current: src });
-      }, posterPath);
-      await sleep(1500);
-      await shot(mp, '12-poster');
-      await mp.evaluate(() => {
-        if (typeof wx.hideLoading === 'function') wx.hideLoading();
-      });
-    }
+    posterFilePath = posterPath;
 
     // ---------------- 物品页
     await mp.switchTab('/pages/items/items');
@@ -170,6 +170,12 @@ async function main() {
 
     await mp.navigateTo('/pages/settings/settings');
     await sleep(WAIT);
+    const settings = await mp.currentPage();
+    check(
+      '设置页的推送入口与总开关一致',
+      (await settings.data()).pushFeatureOn === pushOn,
+      `pushFeatureOn=${(await settings.data()).pushFeatureOn}`
+    );
     await shot(mp, '10-settings');
     await mp.navigateBack();
     await sleep(1200);
@@ -178,6 +184,19 @@ async function main() {
     await mp.navigateTo('/pages/onboarding/onboarding');
     await sleep(WAIT);
     await shot(mp, '11-onboarding');
+    await mp.navigateBack();
+    await sleep(1200);
+
+    // ---- 海报预览放到最后：previewImage 是原生浮层，一旦打开会挡住之后所有截图
+    if (posterFilePath) {
+      await mp.switchTab('/pages/home/home');
+      await sleep(WAIT);
+      await mp.evaluate((src) => {
+        wx.previewImage({ urls: [src], current: src });
+      }, posterFilePath);
+      await sleep(1500);
+      await shot(mp, '12-poster');
+    }
   } finally {
     await mp.close().catch(() => {});
   }

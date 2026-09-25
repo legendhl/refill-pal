@@ -15,6 +15,19 @@ const assert = require('node:assert/strict');
 
 const { createWxStub } = require('../test-utils/wx-stub');
 const mp = require('../test-utils/miniprogram');
+const config = require('../miniprogram/config');
+
+/**
+ * 推送总开关默认是关的（config.js 的 PUSH_ENABLED）。
+ * 要测推送相关界面时用 t.after(withPush(true)) 显式打开，测完自动还原。
+ */
+function withPush(enabled) {
+  const original = config.PUSH_ENABLED;
+  config.PUSH_ENABLED = enabled;
+  return () => {
+    config.PUSH_ENABLED = original;
+  };
+}
 
 const PAGES = [
   'pages/home/home',
@@ -136,8 +149,38 @@ test('首页：加载演示数据后给出「2 样该买了」和一张该买的
   assert.equal(home.data.headline.subtitle, '其中 1 样已经用完了');
   assert.equal(home.data.ok.length, 4);
   assert.equal(home.data.summary.monthTotalText, '89', '演示数据里本月有一笔 89 元');
-  assert.equal(home.data.showQuotaTip, true, '额度只剩 2 次，应该提示续订');
   assert.equal(home.data.hasItems, true);
+  assert.equal(
+    home.data.showQuotaTip,
+    false,
+    '推送总开关关着的时候，首页不该出现续订提示'
+  );
+});
+
+test('首页：推送总开关打开且额度不足时才提示续订', async (t) => {
+  t.after(withPush(true));
+  const { stub, app } = setup();
+  const home = mp.loadPage('pages/home/home', { wx: stub.wx, app });
+  await home.onShow();
+  await stub.flush();
+
+  assert.equal(home.data.quota, 2);
+  assert.equal(home.data.showQuotaTip, true, '额度只剩 2 次，应该提示续订');
+});
+
+test('首页：推送总开关关闭时，续订方法直接返回不做任何事', async () => {
+  const { stub, app, api } = setup();
+  const home = mp.loadPage('pages/home/home', { wx: stub.wx, app });
+  await home.onShow();
+  await stub.flush();
+  const before = home.data.quota;
+
+  await home.requestSubscribe();
+  await stub.flush();
+
+  assert.equal(home.data.quota, before, '不该改动额度');
+  assert.equal(stub.calls.toast.length, 0, '也不该弹任何提示');
+  void api;
 });
 
 test('首页宫格：已用完的物品不重复显示两次「已用完」', async () => {
@@ -353,7 +396,8 @@ test('首页：分享清单在没有画布的环境里要优雅降级，不能�
   assert.equal(stub.calls.actionSheet.length, 0, '没画出图就不该弹保存菜单');
 });
 
-test('首页：演示模式下点续订会走一遍额度流程', async () => {
+test('首页：演示模式下点续订会走一遍额度流程', async (t) => {
+  t.after(withPush(true));
   const { stub, app } = setup();
   const home = mp.loadPage('pages/home/home', { wx: stub.wx, app });
   await home.onShow();
@@ -857,7 +901,8 @@ test('设置页：推送时间只能选整点（避免设了 9:30 却永远收�
   assert.equal(profile.data.family.settings.pushTime, '06:00');
 });
 
-test('设置页：可以预览真实会推送的内容，不用等到早上', async () => {
+test('设置页：可以预览真实会推送的内容，不用等到早上', async (t) => {
+  t.after(withPush(true));
   const { stub, app } = setup();
   const settings = mp.loadPage('pages/settings/settings', { wx: stub.wx, app });
   await settings.onShow();
@@ -874,7 +919,8 @@ test('设置页：可以预览真实会推送的内容，不用等到早上', as
   assert.match(modal.content, /还没有模板 ID/);
 });
 
-test('设置页：演示模式下续订额度', async () => {
+test('设置页：演示模式下续订额度', async (t) => {
+  t.after(withPush(true));
   const { stub, app } = setup();
   const settings = mp.loadPage('pages/settings/settings', { wx: stub.wx, app });
   await settings.onShow();
@@ -883,6 +929,61 @@ test('设置页：演示模式下续订额度', async () => {
   await stub.flush();
   assert.match(stub.lastToast().title, /已续订/);
   assert.equal(settings.data.quota, 5);
+});
+
+test('设置页：推送关闭时收起所有推送入口，并说明清单照常工作', async () => {
+  const { stub, app } = setup();
+  const settings = mp.loadPage('pages/settings/settings', { wx: stub.wx, app });
+  await settings.onShow();
+  await stub.flush();
+
+  assert.equal(settings.data.pushFeatureOn, false);
+  assert.equal(settings.data.remindDays, 3, '「提前几天提醒我」要留着，它决定首页清单的时机');
+
+  // 关掉时这两个方法也得是空操作，不能偷偷去要授权
+  await settings.renew();
+  await settings.preview();
+  await stub.flush();
+  assert.equal(stub.calls.toast.length, 0);
+  assert.equal(stub.calls.modal.length, 0);
+});
+
+test('【回归】续订时会把模板 ID 报给云端，否则 notify 永远发不出推送', async (t) => {
+  t.after(withPush(true));
+  const originalId = config.SUBSCRIBE_TEMPLATE_ID;
+  config.SUBSCRIBE_TEMPLATE_ID = 'TPL-REAL-ID';
+  t.after(() => {
+    config.SUBSCRIBE_TEMPLATE_ID = originalId;
+  });
+
+  const { stub, app, api } = setup();
+  const settings = mp.loadPage('pages/settings/settings', { wx: stub.wx, app });
+  await settings.onShow();
+  await stub.flush();
+  await settings.renew();
+  await stub.flush();
+
+  // 云函数靠家庭设置里的 templateId 发消息，之前客户端没把 ID 传上去，
+  // 导致真实部署后推送永远发不出去（演示模式看不出来）。
+  const profile = await api.call('family', 'profile');
+  assert.equal(profile.data.family.settings.templateId, 'TPL-REAL-ID');
+
+  const preview = await api.call('notify', 'preview');
+  assert.equal(preview.data.templateConfigured, true, '预览应该能看到模板已记录');
+  assert.equal(preview.data.hasContent, true);
+});
+
+test('我的：推送总开关关闭时要能看到状态', async (t) => {
+  const { stub, app } = setup();
+  const me = mp.loadPage('pages/me/me', { wx: stub.wx, app });
+  await me.onShow();
+  await stub.flush();
+  assert.equal(me.data.pushFeatureOn, false, 'WXML 靠它收起「提醒次数余额」那一行');
+
+  t.after(withPush(true));
+  await me.onShow();
+  await stub.flush();
+  assert.equal(me.data.pushFeatureOn, true, '打开后要恢复显示');
 });
 
 // ============================================================ 首次使用
