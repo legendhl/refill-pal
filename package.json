@@ -8,7 +8,8 @@
     "test": "node --test test/*.test.js",
     "sync": "node scripts/sync-shared.js",
     "check": "node scripts/check-json.js",
-    "verify": "npm run sync && npm run check && npm test"
+    "verify": "npm run sync && npm run check && npm test",
+    "release-check": "node scripts/release-check.js"
   },
   "engines": {
     "node": ">=18"

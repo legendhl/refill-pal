@@ -423,6 +423,57 @@ test('notify 的 package.json 只依赖 wx-server-sdk，且不用 file: 依赖',
   assert.deepEqual(Object.keys(pkg.dependencies), ['wx-server-sdk']);
 });
 
+// ============================================================ 发送器
+
+test('推送跳转版本可配置：体验阶段必须用 trial，否则点消息打不开', async () => {
+  const calls = [];
+  const fakeCloud = {
+    openapi: {
+      subscribeMessage: {
+        send: async (params) => {
+          calls.push(params);
+          return {};
+        }
+      }
+    }
+  };
+
+  await notify.createSender(fakeCloud)({ touser: 'o', templateId: 't', page: 'p', data: {} });
+  assert.ok(['developer', 'trial', 'formal'].indexOf(notify.MINIPROGRAM_STATE) >= 0);
+  assert.equal(calls[0].miniprogramState, notify.MINIPROGRAM_STATE);
+  assert.equal(
+    notify.MINIPROGRAM_STATE,
+    'trial',
+    '小程序还没有正式版时必须是 trial（正式发布后要改成 formal，release-check 会提醒）'
+  );
+
+  await notify.createSender(fakeCloud, { miniprogramState: 'formal' })({
+    touser: 'o',
+    templateId: 't',
+    page: 'p',
+    data: {}
+  });
+  assert.equal(calls[1].miniprogramState, 'formal', '要能覆盖');
+});
+
+test('发送器把 openapi 抛出的错误码原样转成结果，而不是让任务崩掉', async () => {
+  const failing = {
+    openapi: {
+      subscribeMessage: {
+        send: async () => {
+          const e = new Error('user refuse to accept the msg');
+          e.errCode = 43101;
+          throw e;
+        }
+      }
+    }
+  };
+  const res = await notify.createSender(failing)({ touser: 'o', templateId: 't', page: 'p', data: {} });
+  assert.equal(res.ok, false);
+  assert.equal(res.errCode, 43101);
+  assert.match(res.errMsg, /refuse/);
+});
+
 // ============================================================ 订阅额度联动
 
 test('续订时会把模板 ID 存进家庭设置，notify 靠它发消息', async () => {

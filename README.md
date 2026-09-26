@@ -72,6 +72,7 @@ refillPal/
 | `npm run check` | 结构校验：页面完整性、组件路径、JS 语法、WXML 配对、定时触发器、推送总开关一致性 |
 | `npm run verify` | sync + check + test，提交前跑这个 |
 | `npm run sync` | 把 `cloudfunctions/_shared/` 复制到各云函数（改了共享代码后必跑） |
+| `npm run release-check` | 发布前自检：占位符、演示模式、推送开关、云函数同步、包体积 |
 | `node test-utils/e2e-screenshots.js` | 驱动微信开发者工具跑一遍真机模拟器并截图（需要开启工具的服务端口） |
 
 ## 微信推送总开关
@@ -116,6 +117,16 @@ refillPal/
 
 `test/pages.test.js` 会把 Node 当成小程序运行环境（注入 `wx` / `Page` / `getApp` 桩），
 真的执行页面逻辑。它拦下过两个真 bug：归档物品的详情页误报「找不到物品」、撤销后宫格库存不同步。
+
+## 从真机测试到发布
+
+三个阶段要求递增，**备案只影响发布，不卡真机调试和体验版**：
+
+1. **真机调试 / 预览**：填好 AppID + 云开发配好 + 上传云函数，扫码即可
+2. **体验版**：多一步上传并设为体验版，家人需要被加为体验成员
+3. **正式版**：还需要备案 + 服务类目 + 用户隐私保护指引 + 提交审核
+
+上传前先跑 `npm run release-check`。平台侧还要做的事见 [docs/deploy.md](docs/deploy.md) 的「从真机测试走到正式发布」。
 
 ## 已知限制
 

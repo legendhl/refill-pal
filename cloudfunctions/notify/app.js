@@ -21,6 +21,16 @@ const kit = require('./shared/kit');
  */
 const PUSH_ENABLED = false;
 
+/**
+ * 用户点击推送消息后，跳转到小程序的哪个版本：
+ *   'developer' 开发版 / 'trial' 体验版 / 'formal' 正式版
+ *
+ * 现在小程序还没有正式版，必须用 'trial'，否则用户点开消息会因为
+ * 「正式版不存在」而打不开。**正式发布之后要改成 'formal'。**
+ * （manifest 里 release-check 会提醒这件事）
+ */
+const MINIPROGRAM_STATE = 'trial';
+
 /** 这些错误码意味着「不用再给这个人发了」 */
 const BLOCKED_CODES = [43101];
 /** 这些错误码说明模板配错了，属于开发期问题，要显式记下来 */
@@ -195,7 +205,8 @@ async function runDaily({ db, now, send, enabled }) {
 }
 
 /** 用 wx-server-sdk 的 openapi 发订阅消息 */
-function createSender(cloud) {
+function createSender(cloud, options = {}) {
+  const miniprogramState = options.miniprogramState || MINIPROGRAM_STATE;
   return async function send({ touser, templateId, page, data }) {
     try {
       const res = await cloud.openapi.subscribeMessage.send({
@@ -203,7 +214,7 @@ function createSender(cloud) {
         templateId,
         page,
         lang: 'zh_CN',
-        miniprogramState: 'formal',
+        miniprogramState,
         data
       });
       return { ok: true, errCode: res && res.errCode, errMsg: res && res.errMsg };
@@ -219,6 +230,7 @@ function createSender(cloud) {
 
 module.exports = {
   PUSH_ENABLED,
+  MINIPROGRAM_STATE,
   pushFamily,
   runDaily,
   createSender,
