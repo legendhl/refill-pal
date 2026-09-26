@@ -3,7 +3,7 @@
   "cloudfunctionRoot": "cloudfunctions/",
   "projectname": "refillPal",
   "description": "补货小管家 - 家庭日用品补货管理",
-  "appid": "wxYOUR_APPID_HERE",
+  "appid": "wx8a6c1f3103e1afc6",
   "compileType": "miniprogram",
   "setting": {
     "urlCheck": false,

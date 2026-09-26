@@ -9,7 +9,7 @@
  */
 module.exports = {
   /** 云开发环境 ID，形如 'refillpal-1a2b3c4d5e6f7g8h' */
-  ENV_ID: 'YOUR-CLOUD-ENV-ID',
+  ENV_ID: 'cloud1-d7gea2hp43fd80760',
 
   /** 订阅消息模板 ID（每日补货汇总） */
   SUBSCRIBE_TEMPLATE_ID: 'YOUR-SUBSCRIBE-TEMPLATE-ID',
@@ -18,7 +18,7 @@ module.exports = {
    * true  = 本地演示数据，不需要云开发就能在开发者工具里点着看
    * false = 走真实云函数
    */
-  USE_MOCK: true,
+  USE_MOCK: false,
 
   /**
    * 微信推送（订阅消息）总开关。
