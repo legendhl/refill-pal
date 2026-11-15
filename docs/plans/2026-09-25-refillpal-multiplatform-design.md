@@ -1,7 +1,7 @@
 # 补货小管家 · 多端（Android / iOS）设计
 
 - 日期：2026-09-25
-- 状态：**待确认**（本文档是提案，尚未开始实施）
+- 状态：**已确认**（4 个决策点已定，见 §12；尚未开始实施）
 - 前置文档：[一期设计](2026-09-25-refillpal-design.md)、[实施计划](2026-09-25-refillpal-implementation-plan.md)
 - 范围：小程序保留，新增 Android + iOS 移动端；**不含** `.ics` 日历订阅、Web 版、远程推送
 
@@ -178,20 +178,24 @@ function createHandler(handlers, deps) {
 | **手输手机号 + 短信验证码** | ✅ 两端都能做 | 天然打通（同一手机号 = 同一人） | 短信约 ¥0.04/条 | **推荐** |
 | 邮箱 + 密码 | ✅ | 天然打通 | 0 | 备选（体验差） |
 
-推荐：**手机号 + 验证码**（用户在小程序或 App 里各自输入一次手机号验证，两边 `identityKey` 相同即视为同一人）。
+**已确认：邮箱 + 密码。**
 
-- 短信服务用腾讯云短信（个人可开通），注意需要**签名与模板审核**。
-- 备选降级：先用「邮箱 + 密码」把链路跑通，之后再换短信 —— 接口形状一样，切换成本低。
+- 两端都用邮箱注册登录，同一邮箱 = 同一人，不依赖 unionid、不需要任何资质、无短信费用。
+- 代价是体验略差（手输邮箱、要记密码），但对 2~5 人的家庭场景可接受。
+- **不做自助找回密码**：找回需要能发邮件（SMTP 或 Resend），先省掉这个外部依赖；忘记密码由家庭创建者在 App 里重置。
 
 ### 5.3 数据迁移
 
 | 集合 | 变更 | 迁移动作 |
 | --- | --- | --- |
-| `members` | `openid` → `identityKey`（形如 `wechat:oXXX` / `phone:+8613800138000`），唯一索引改建在 `identityKey` 上 | 存量数据脚本：`identityKey = "wechat:" + openid` |
+| `members` | `openid` → `user_id`（外键指向 `users`）；唯一索引改到 `user_id` | 存量数据脚本：为每个 openid 建一条 `users` 记录 |
+| `users` | **新表**：`id`、`email`（可空，唯一）、`password_hash`（可空）、`wechat_openid`（可空，唯一） | 从 `members.openid` 回填 |
 | `families` | 新增 `calendarToken`（若将来做 ICS）、`ownerUserId` | 可空，无需回填 |
 | 其余集合 | 不变 | — |
 
-迁移必须**可回滚**：先双写 `openid` 与 `identityKey`，观察一个版本后再删 `openid`。
+迁移必须**可回滚**：先双写 `openid` 与 `user_id`，观察一个版本后再删 `openid`。
+
+为什么用 `users` 表而不是给 `members` 加一个字符串 `identityKey`：同一个用户可能同时有微信身份（小程序）和邮箱密码（App），而"他在这个家庭里是什么角色"是另一件事。把「身份」和「成员关系」拆开，绑定账号时才不需要搬家。
 
 ### 5.4 HTTP 入口
 
@@ -249,9 +253,9 @@ App 启动 / 数据变更
 
 | 步骤 | 内容 | 验收标准（可执行） |
 | --- | --- | --- |
-| **1. 抽包** | `_shared/core.js` → `packages/refillpal-core/src/algorithms/`；`viewmodel/format/constants/undo` → `src/view/`；`sync-shared.js` 改为「把包产物拷进 cloudfunctions 与 miniprogram」 | `npm test` 仍 219 全绿；`npm run check` 通过；小程序与云函数行为零变化 |
+| **1. 抽包 + 收口数据层** | `_shared/core.js` → `packages/refillpal-core/src/algorithms/`；`viewmodel/format/constants/undo` → `src/view/`；`sync-shared.js` 改为「把包产物拷进 cloudfunctions 与 miniprogram」；**`db` 访问收口到 `repository` 接口**（见 §11.5） | `npm test` 仍 219 全绿；`npm run check` 通过；小程序与云函数行为零变化；除 `repository/clouddb.js` 外，任何 handler 不再直接出现 `db.collection(` |
 | **2. 契约显式化** | `src/contract/` 定义每个 action 的入参出参形状；把现有「mock 与云函数结构一致」的测试升级为「三端一致」 | 新增契约测试；任何一端返回值结构漂移都会失败 |
-| **3. 身份与 HTTP** | `openid` → `identityKey`；`members` 双写迁移；新增 HTTP 入口；手机号验证码登录 | 小程序端行为不变；HTTP 入口与小程序入口对同一 action 返回相同结构；越权测试两套都过 |
+| **3. 身份与 HTTP** | 新建 `users` 表；`members.openid` → `members.user_id`；新增 HTTP 入口；邮箱 + 密码注册登录（scrypt + JWT） | 小程序端行为不变；HTTP 入口与小程序入口对同一 action 返回相同结构；越权测试两套都过 |
 | **4. App** | 建 `apps/mobile`，先做只读（首页/物品/统计），再做记一笔 | 真机上能登录、能看到家庭数据、能收到本地通知 |
 
 **关键：第 1、2 步不改变任何用户可见行为**，只是把代码挪到正确的位置。这两步做完，小程序的 219 个测试仍然全绿，就等于"地基已经能接任何端了"。
@@ -303,7 +307,216 @@ App 启动 / 数据变更
 
 ---
 
-## 11. 待确认的决策点
+## 11. 服务端部署与数据存储
+
+需求方现有一台 **阿里云轻量应用服务器（Alibaba Cloud Linux，2 vCPU / 2 GiB / 40 GiB ESSD）**，已付费。这让"自建后端"从"每年多花 ¥840"变成"只用把已有的机器用起来"，选型因此改变。
+
+### 11.1 一条硬约束：数据只能有一个源
+
+小程序、App、未来的 Web 必须读写**同一份数据**。绝不能"小程序写云开发、App 写自己的库"——那样家庭共享立刻失效（这也是为什么下面的路线必须二选一，不能并存）。
+
+### 11.2 两条路线
+
+| | 路线 A：微信云开发 + HTTP 触发 | 路线 B：自建 Node + PostgreSQL |
+| --- | --- | --- |
+| 接口 | 给 5 个云函数各配 HTTP 触发路径 | Fastify 服务，`POST /api/{action}` |
+| 数据 | 云开发数据库（MongoDB 兼容，**无公网连接串**） | 服务器上的 PostgreSQL |
+| 小程序端 | **零改动**（继续 `wx.cloud.callFunction`） | 要改 `api.js` 为 `wx.request`，并配置 request 合法域名 |
+| App 端 | 直接 HTTP | 直接 HTTP |
+| 新增成本 | ¥0 | ¥0（服务器已有） |
+| 锁定 | 绑小程序 AppID | 无 |
+| 工作量 | 1 天 | 3~5 天（含数据迁移与部署） |
+
+### 11.3 推荐：直接走 B
+
+理由：
+
+1. **服务器已经付过钱**，反对自建的最大理由（成本）消失。
+2. 需求方明确把"数据与后续扩展"列为动机，路线 A 不解决锁定，只是把锁定往后推。
+3. **备案本来就在关键路径上**（小程序也要备案），所以"需要域名 + 备案"不是新增成本。
+4. 路线 A 之后仍要迁一次 B，等于把迁移风险做两遍。
+
+**但保留一个安全阀**：先定契约（`/api/{action}` + JSON body），两条路对客户端完全一致。如果自建卡在域名或证书上，可以临时切回路线 A，App 不用改一行。
+
+### 11.4 目标拓扑
+
+```
+   App (RN)              小程序
+      │                    │
+      │ HTTPS              │ HTTPS（wx.request，需配 request 合法域名）
+      └────────┬───────────┘
+               ▼
+        Caddy :443  ← 自动申请/续期 Let's Encrypt 证书，反代到本机
+               │ 127.0.0.1:3000
+               ▼
+        Node (Fastify)  ── repository 接口 ──▶  PostgreSQL 127.0.0.1:5432
+               │
+               └─ 静态文件/日志 → systemd journal
+```
+
+- 数据库**只监听 127.0.0.1**，永不暴露公网
+- Caddy 负责 TLS 与 HTTP/2；比 nginx + certbot 少一半配置
+- 不引入 Docker：2 GiB 内存上跑容器运行时 + 镜像的收益不抵开销（若将来要上云托管再容器化）
+
+### 11.5 数据层收口：`repository` 接口
+
+现在每个 handler 直接写 `db.collection('items').where(...).get()`，这是云数据库的形状。换成 PostgreSQL 就意味着改遍 5 个 `app.js`。所以在第 1 步就收口：
+
+```js
+// cloudfunctions/_shared/repository/index.js —— 只声明实际用到的方法
+/**
+ * @typedef {Object} Repository
+ * @property {(name: string) => Collection} collection
+ */
+
+// Collection 需要实现（与现有 kit.js 的用法一一对应）：
+//   where(cond) orderBy(field, dir) limit(n) skip(n)
+//   .get() -> { data: Row[] }
+//   .count() -> { total: number }
+//   .add({ data }) -> { _id }
+//   .update({ data }) -> { stats: { updated } }
+//   .remove() -> { stats: { removed } }
+//   command: { eq, neq, gt, gte, lt, lte, in, nin, inc }
+
+// 三个实现，同一套接口：
+//   clouddb.js   ← cloud.database()，现在生产用
+//   postgres.js  ← 新，SQL 翻译（含 where 条件 → WHERE 子句）
+//   fake-db.js   ← 已有，测试用（test-utils/fake-db.js）
+```
+
+**这不是过度设计**：`test-utils/fake-db.js` 已经是这个接口的第二个实现了，说明这层本来就存在，只是没被命名。命名之后，换数据库从"重写 5 个 handler"变成"新增一个 80 行的适配器"。
+
+### 11.6 集合 → 表
+
+| 云开发集合 | 表 | 说明 |
+| --- | --- | --- |
+| `families` | `families` | `settings` 用 `jsonb` |
+| （新增） | `users` | 邮箱 + 密码 + 微信 openid |
+| `members` | `members` | `openid` → `user_id` |
+| `items` | `items` | `base_qty` 用 `numeric` |
+| `events` | `events` | 索引：`(family_id, occurred_at desc)`、`(family_id, item_id, occurred_at)` |
+| `pushLogs` | `push_logs` | 推送总开关关闭后可暂不迁 |
+
+```sql
+create table users (
+  id            text primary key,
+  email         text unique,              -- App 用户
+  password_hash text,                     -- scrypt: 格式见 11.7
+  wechat_openid text unique,              -- 小程序用户
+  created_at    timestamptz not null default now(),
+  check (email is not null or wechat_openid is not null)
+);
+
+create table members (
+  id         text primary key,
+  family_id  text not null references families(id) on delete cascade,
+  user_id    text not null references users(id) on delete cascade,
+  nick_name  text not null default '家人',
+  role       text not null default 'member',   -- owner | member
+  joined_at  timestamptz not null default now(),
+  unique (family_id, user_id)
+);
+
+create table events (
+  id          text primary key,
+  family_id   text not null references families(id) on delete cascade,
+  item_id     text not null references items(id) on delete cascade,
+  type        text not null,                   -- purchase | stocktake | used_up
+  qty         numeric not null default 0,
+  amount      numeric,
+  channel     text, brand text, spec text, note text,
+  occurred_at timestamptz not null,
+  created_by  text,
+  created_at  timestamptz not null default now()
+);
+create index on events (family_id, occurred_at desc);
+create index on events (family_id, item_id, occurred_at);
+```
+
+### 11.7 邮箱 + 密码的字段设计
+
+- **哈希**：`scrypt`（Node 内置 `crypto.scryptSync`，零依赖）。存 `scrypt$N$r$p$salt$hash`（Base64），参数 `N=16384, r=8, p=1`，与常见库兼容。
+- **绝不做**：明文、MD5、SHA1、可逆加密。
+- **token**：登录成功签发 JWT（`HS256`，有效期 30 天），payload 只放 `sub: userId`。密钥放 systemd 环境变量文件（`/etc/refillpal/env`，权限 600），不进代码、不进 git。
+- **登录接口**：`POST /api/auth/login`、`POST /api/auth/register` 不属于业务 handler，单独两条路由。
+- **绑定**：小程序用户在「我的」页可补填邮箱 + 密码（给当前 `users` 行填 `email`/`password_hash`）；若该邮箱已属于另一个 `users` 行，**只提示不合并**（合并家庭超出范围）。
+
+### 11.8 部署清单（针对 2C2G / Alibaba Cloud Linux）
+
+Alibaba Cloud Linux 是 RHEL 系，用 `dnf`，不是 `apt`。
+
+1. **加 2 GiB swap**（2 GiB 内存跑 Postgres + Node，不加 swap 容易被 OOM killer 干掉）
+   ```bash
+   fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+   echo '/swapfile none swap sw 0 0' >> /etc/fstab
+   ```
+2. **Node 20 LTS**：NodeSource 源或官方二进制解压到 `/opt/node`。
+3. **PostgreSQL 16**：PGDG 源；`postgresql.conf` 按 2 GiB 调：`shared_buffers = 256MB`、`work_mem = 8MB`、`maintenance_work_mem = 64MB`、`max_connections = 30`。
+4. **Caddy**：官方源；`Caddyfile` 只有四行：
+   ```
+   api.example.com {
+     reverse_proxy 127.0.0.1:3000
+   }
+   ```
+   证书自动申请、自动续期。
+5. **systemd**：`refillpal-api.service`，`Restart=always`、`EnvironmentFile=/etc/refillpal/env`、`MemoryMax=512M`。
+6. **阿里云安全组**：只放行 22/80/443；5432 与 3000 不对外。
+7. **Node 内存上限**：`NODE_OPTIONS=--max-old-space-size=384`，防止把机器吃满。
+
+### 11.9 备份
+
+数据丢了就是一年的记录，**这一步不能省**：
+
+```bash
+# /etc/cron.d/refillpal-backup —— 每天 03:10
+10 3 * * * postgres pg_dump -Fc refillpal > /var/backups/refillpal-$(date +\%F).dump
+# 保留 30 天 + 每周同步到阿里云 OSS（ossutil）或下载到本地
+```
+
+恢复演练一次（`pg_restore` 到临时库）再算备份可用。
+
+### 11.10 迁移步骤与回滚
+
+| 步骤 | 动作 | 回滚方式 |
+| --- | --- | --- |
+| 1 | 云开发控制台导出全部 5 个集合为 JSON | 无副作用 |
+| 2 | 写一次性导入脚本 `tools/import-clouddb.js`（可重复执行、幂等） | 清库重跑 |
+| 3 | 小程序 `api.js` 切到 `wx.request`，两套后端并行验证 | 把 URL 切回 `wx.cloud.callFunction` |
+| 4 | 观察 1 周，确认无数据差异后停用云函数 | 云函数保留 30 天不删 |
+
+第 3 步要**并行验证**：同一份操作分别打两个后端，比对返回结构（复用第 2 步的契约测试）。
+
+### 11.11 前置条件：域名与备案
+
+这是路线 B 唯一的硬前置，**建议立刻并行启动**：
+
+- 一个**已完成 ICP 备案**的域名（小程序备案也需要，可复用同一主体）
+- 该域名解析到这台轻量服务器的公网 IP
+- 小程序端 `wx.request` 要求「request 合法域名」为已备案 HTTPS 域名 —— 没有备案，小程序就无法访问自建接口
+
+如果备案没下来，先用路线 A（云开发 HTTP 触发）顶上，App 与小程序都能跑；备案下来后再切 B。
+
+---
+
+## 12. 决策记录
+
+### 12.1 已确认（2026-09-25）
+
+| # | 决策 | 结论 |
+| --- | --- | --- |
+| 1 | `packages/refillpal-core` 是否引入构建步骤 | **不引入**，CommonJS + JSDoc |
+| 2 | 是否暂不移动 `miniprogram/` | **同意**暂不移动，App 跑通后再统一 |
+| 3 | 身份方案 | **邮箱 + 密码**（不做短信、不做 App 内微信登录、不做自助找回） |
+| 4 | 是否接受两端各维护一套 UI | **接受**，选 RN + Expo（不迁 Taro） |
+| 5 | 服务端部署 | **自建**：阿里云轻量（2C2G）+ Node/Fastify + PostgreSQL + Caddy |
+| 6 | 提醒实现 | App 端**本地通知**，不做远程推送、不做 `.ics` |
+
+### 12.2 仍需确认
+
+1. **域名与备案现状**：是否已有已备案域名？没有的话备案要排在前面（它同时阻塞小程序发布与自建后端）。
+2. **数据库最终选型**：本文档按 PostgreSQL 写。如果更在意"零运维、备份就是拷文件"，也可以选 SQLite（WAL 模式，2 GiB 机器上更宽松），代价是将来上云托管/多实例会受限。
+3. **小程序是否也切到自建后端**（路线 B 要求切换）。若不切，就必须走路线 A 的双后端并存——**不推荐**，会出现数据双源。
+
 
 写文档时有意留了四个需要需求方拍板的点：
 
