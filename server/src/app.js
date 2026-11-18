@@ -16,6 +16,33 @@ const http = require('node:http');
 
 const MAX_BODY_BYTES = 1024 * 1024;
 
+/**
+ * 极简内存限流：同一来源在窗口期内最多尝试若干次。
+ * 只为挡住暴力猜密码，不追求精确（单实例家用足够）。
+ */
+function createRateLimiter({ windowMs = 60 * 1000, max = 20 } = {}) {
+  const hits = new Map();
+  return function allow(key) {
+    const now = Date.now();
+    const entry = hits.get(key) || { count: 0, resetAt: now + windowMs };
+    if (now > entry.resetAt) {
+      entry.count = 0;
+      entry.resetAt = now + windowMs;
+    }
+    entry.count += 1;
+    hits.set(key, entry);
+    if (hits.size > 5000) hits.clear(); // 防止被刷爆内存
+    return entry.count <= max;
+  };
+}
+
+/** 取来源 IP：Caddy/nginx 会带 x-forwarded-for */
+function clientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) return String(forwarded).split(',')[0].trim();
+  return (req.socket && req.socket.remoteAddress) || 'unknown';
+}
+
 /** 业务错误码 → HTTP 状态码 */
 const STATUS_BY_CODE = {
   UNAUTHORIZED: 401,
@@ -35,6 +62,7 @@ const STATUS_BY_CODE = {
   EMAIL_TAKEN: 409,
   NO_FAMILY: 409,
   NOT_EMPTY: 409,
+  RATE_LIMITED: 429,
   INTERNAL: 500
 };
 
@@ -99,6 +127,7 @@ function createApp(options) {
   const now = options.now || (() => new Date());
   const log = options.log || (() => {});
   const corsOrigin = options.corsOrigin === undefined ? '*' : options.corsOrigin;
+  const allowAuth = options.allowAuth || createRateLimiter(options.rateLimit);
 
   function corsHeaders() {
     return {
@@ -153,6 +182,14 @@ function createApp(options) {
     }
 
     if (parts[1] === 'auth') {
+      const isAuthAttempt = method === 'POST' && (parts[2] === 'register' || parts[2] === 'login');
+      if (isAuthAttempt && !allowAuth(clientIp(req))) {
+        return {
+          status: 429,
+          body: { ok: false, code: 'RATE_LIMITED', message: '尝试太频繁，请等一分钟再试' }
+        };
+      }
+
       if (parts[2] === 'register' && method === 'POST') {
         const body = await readBody(req);
         try {
@@ -233,4 +270,4 @@ function createApp(options) {
   return { server, route };
 }
 
-module.exports = { createApp, STATUS_BY_CODE, MAX_BODY_BYTES };
+module.exports = { createApp, createRateLimiter, clientIp, STATUS_BY_CODE, MAX_BODY_BYTES };

@@ -226,3 +226,38 @@ test('没有加入家庭时，业务接口返回 NO_FAMILY（客户端据此跳�
     await srv.close();
   }
 });
+
+test('登录限流：同一来源一分钟内尝试过多返回 429', async () => {
+  const srv = await startTestServer();
+  try {
+    await srv.registerUser('limit@example.com', 'password123');
+
+    let last = null;
+    for (let i = 0; i < 25; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      last = await srv.api('POST', '/api/auth/login', {
+        body: { email: 'limit@example.com', password: 'wrong-password' }
+      });
+    }
+    assert.equal(last.status, 429);
+    assert.equal(last.body.code, 'RATE_LIMITED');
+  } finally {
+    await srv.close();
+  }
+});
+
+test('限流不影响正常业务的连续调用', async () => {
+  const srv = await startTestServer();
+  try {
+    const { token } = await srv.registerUser('burst@example.com', 'password123');
+    ok(await srv.api('POST', '/api/family/create', { body: { name: '我家' }, token }));
+
+    for (let i = 0; i < 30; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const res = await srv.api('POST', '/api/item/list', { body: {}, token });
+      assert.equal(res.status, 200, `第 ${i + 1} 次调用被限流了`);
+    }
+  } finally {
+    await srv.close();
+  }
+});
