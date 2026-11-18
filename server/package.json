@@ -1,0 +1,14 @@
+{
+  "name": "@refillpal/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "补货小管家 · 自建服务端（零运行时依赖：node:http + node:sqlite + node:crypto）",
+  "main": "src/main.js",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node --test test/*.test.js"
+  }
+}

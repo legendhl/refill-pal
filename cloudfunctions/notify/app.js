@@ -108,7 +108,8 @@ async function pushFamily({ db, family, now, send }) {
     const member = eligible[i];
     /* eslint-disable no-await-in-loop */
     const sent = await send({
-      touser: member.openid,
+      // 新数据用 identityKey；旧数据（云开发里只写过 openid）兜底
+      touser: member.identityKey || member.openid,
       templateId,
       page: 'pages/home/home',
       data: built.payload

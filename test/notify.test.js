@@ -108,7 +108,7 @@ test('【总开关】关闭时定时任务什么都不做', async () => {
   assert.equal(sent.length, 0);
   assert.equal(db._dump('pushLogs').length, 0, '不留日志，免得以后排查时被误导');
   assert.equal(
-    db._dump('members').find((m) => m.openid === 'openid-dad').subQuota.remaining,
+    db._dump('members').find((m) => m.identityKey === 'openid-dad').subQuota.remaining,
     2,
     '不该扣额度'
   );
@@ -150,7 +150,7 @@ test('到点且有待补货 → 推一条汇总，扣一次额度，写一条日
   assert.equal(message.data.number3.value, 1);
 
   const members = db._dump('members');
-  const dad = members.find((m) => m.openid === 'openid-dad');
+  const dad = members.find((m) => m.identityKey === 'openid-dad');
   assert.equal(dad.subQuota.remaining, 1, '推送成功要扣一次额度');
 
   const logs = db._dump('pushLogs');
@@ -170,8 +170,8 @@ test('多个成员各自收到，额度各自扣', async () => {
   assert.equal(summary.sentCount, 2);
   assert.deepEqual(sent.map((s) => s.touser).sort(), ['openid-dad', 'openid-mom']);
   const members = db._dump('members');
-  assert.equal(members.find((m) => m.openid === 'openid-dad').subQuota.remaining, 1);
-  assert.equal(members.find((m) => m.openid === 'openid-mom').subQuota.remaining, 0);
+  assert.equal(members.find((m) => m.identityKey === 'openid-dad').subQuota.remaining, 1);
+  assert.equal(members.find((m) => m.identityKey === 'openid-mom').subQuota.remaining, 0);
 });
 
 // ============================================================ 不该推的情况
@@ -251,7 +251,7 @@ test('【幂等】同一天被触发多次，只会推一次', async () => {
   assert.equal(sent.length, 1, '绝不能重复打扰');
   assert.equal(db._dump('pushLogs').length, 1);
   assert.equal(
-    db._dump('members').find((m) => m.openid === 'openid-dad').subQuota.remaining,
+    db._dump('members').find((m) => m.identityKey === 'openid-dad').subQuota.remaining,
     2,
     '也不能多扣额度'
   );
@@ -281,7 +281,7 @@ test('用户拒收（43101）→ 该成员额度清零并标记，其他人不�
   assert.equal(summary.sentCount, 1);
 
   const members = db._dump('members');
-  const dad = members.find((m) => m.openid === 'openid-dad');
+  const dad = members.find((m) => m.identityKey === 'openid-dad');
   assert.equal(dad.subQuota.remaining, 0, '拒收说明授权已失效，额度清零');
   assert.equal(dad.subQuota.blocked, true, '要标记出来，好在小程序里提示重新授权');
 
@@ -304,7 +304,7 @@ test('模板参数不合法（47003）→ 记录成模板错误，不能误判�
   const log = db._dump('pushLogs')[0];
   assert.equal(log.results[0].kind, 'TEMPLATE_ERROR');
   assert.equal(
-    db._dump('members').find((m) => m.openid === 'openid-dad').subQuota.remaining,
+    db._dump('members').find((m) => m.identityKey === 'openid-dad').subQuota.remaining,
     2,
     '模板配错不该扣用户额度'
   );

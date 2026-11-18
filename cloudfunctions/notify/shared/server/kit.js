@@ -53,9 +53,21 @@ async function fetchAll(query, options = {}) {
   return out;
 }
 
-/** openid → { member, family }；不属于任何家庭时返回 null */
-async function resolveFamily(db, openid) {
-  const res = await db.collection('members').where({ openid }).limit(1).get();
+/**
+ * 身份标识 → { member, family }；不属于任何家庭时返回 null。
+ *
+ * `identity` 是**不透明的身份字符串**：
+ *   - 微信小程序：微信的 openid（如 oABC123...）
+ *   - 自建服务端：`user:<userId>`（邮箱密码登录后签发的用户 ID）
+ *
+ * 存储字段为 `identityKey`。旧数据（云开发里只写过 openid）用第二段查询兜底，
+ * 这样小程序端不需要停机迁移。
+ */
+async function resolveFamily(db, identity) {
+  let res = await db.collection('members').where({ identityKey: identity }).limit(1).get();
+  if (!res || !res.data || !res.data.length) {
+    res = await db.collection('members').where({ openid: identity }).limit(1).get();
+  }
   const member = (res && res.data && res.data[0]) || null;
   if (!member) return null;
   const fres = await db.collection('families').where({ _id: member.familyId }).limit(1).get();
@@ -65,8 +77,8 @@ async function resolveFamily(db, openid) {
 }
 
 /** 必须已加入家庭，否则抛错 */
-async function requireFamily(db, openid) {
-  const ctx = await resolveFamily(db, openid);
+async function requireFamily(db, identity) {
+  const ctx = await resolveFamily(db, identity);
   if (!ctx) throw appError('NO_FAMILY', '你还没有加入家庭，先创建一个或输入邀请码加入');
   return ctx;
 }

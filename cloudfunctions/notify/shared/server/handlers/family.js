@@ -73,7 +73,7 @@ const handlers = {
       await db.collection('members').add({
         data: {
           familyId: _id,
-          openid,
+          identityKey: openid,
           nickName,
           avatar,
           role: 'owner',
@@ -103,7 +103,7 @@ const handlers = {
     await db.collection('members').add({
       data: {
         familyId: family._id,
-        openid,
+        identityKey: openid,
         nickName: kit.str(payload.nickName, { field: '昵称', max: 20, fallback: '家人' }),
         avatar: kit.str(payload.avatar, { field: '头像', max: 500, fallback: '' }),
         role: 'member',
@@ -218,7 +218,7 @@ const handlers = {
     if (member.role === 'owner' && others.length) {
       const next = sortMembers(others)[0];
       await db.collection('members').where({ _id: next._id }).update({ data: { role: 'owner' } });
-      await db.collection('families').where({ _id: family._id }).update({ data: { createdBy: next.openid } });
+      await db.collection('families').where({ _id: family._id }).update({ data: { createdBy: next.identityKey } });
     }
 
     // 数据保留：误退可以凭邀请码重新加入，家里的记录不会丢
