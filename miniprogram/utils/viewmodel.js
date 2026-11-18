@@ -1,3 +1,7 @@
+/* 自动生成，请勿直接修改。
+ * 源文件：packages/refillpal-core/src/view/viewmodel.js
+ * 由 npm run sync 同步；要改请改源文件后重新同步。
+ */
 /**
  * 视图模型层：把云端下发的数据加工成"界面要显示成什么样"。
  *

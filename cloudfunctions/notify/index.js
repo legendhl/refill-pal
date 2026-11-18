@@ -10,7 +10,7 @@
  */
 
 const cloud = require('wx-server-sdk');
-const kit = require('./shared/kit');
+const kit = require('./shared/server/kit');
 const { runDaily, createSender } = require('./app');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });

@@ -1,3 +1,7 @@
+/* 自动生成，请勿直接修改。
+ * 源文件：packages/refillpal-core/src/view/undo.js
+ * 由 npm run sync 同步；要改请改源文件后重新同步。
+ */
 /** 撤销窗口队列（纯逻辑，定时器可注入，便于单测） */
 
 /**

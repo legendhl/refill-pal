@@ -1,3 +1,7 @@
+/* 自动生成，请勿直接修改。
+ * 源文件：packages/refillpal-core/src/view/format.js
+ * 由 npm run sync 同步；要改请改源文件后重新同步。
+ */
 /** 纯格式化与日期工具。全部为纯函数，无副作用、不依赖 wx API（便于单测）。 */
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;

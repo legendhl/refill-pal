@@ -18,7 +18,7 @@ const familyApp = require('../cloudfunctions/family/app');
 const itemApp = require('../cloudfunctions/item/app');
 const purchaseApp = require('../cloudfunctions/purchase/app');
 const notify = require('../cloudfunctions/notify/app');
-const kit = require('../cloudfunctions/_shared/kit');
+const kit = require('../packages/refillpal-core/src/server/kit');
 
 /** 2026-09-25 01:00 UTC = 09:00 UTC+8，正好是默认推送时间 */
 const PUSH_TIME = new Date(Date.UTC(2026, 8, 25, 1, 0, 0));

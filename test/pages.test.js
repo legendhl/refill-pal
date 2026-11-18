@@ -772,7 +772,13 @@ test('我的：显示家庭、额度与演示模式标记', async () => {
   assert.equal(me.data.roleText, '创建者');
   assert.equal(me.data.quota, 2);
   assert.equal(me.data.isMock, true);
-  assert.equal(me.data.envConfigured, false, '占位符环境下要提示未配置');
+  // 不断言具体值：填了真实环境 ID 之后这里就该是 true。
+  // 断言的是「页面的判断与 config 一致」，而不是「当前是占位符」。
+  assert.equal(
+    me.data.envConfigured,
+    config.ENV_ID.indexOf('YOUR') !== 0,
+    '环境 ID 未配置时要在界面上提示'
+  );
 });
 
 test('我的：导出数据会复制到剪贴板', async () => {

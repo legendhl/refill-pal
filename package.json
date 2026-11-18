@@ -5,7 +5,7 @@
   "description": "补货小管家 RefillPal - 家庭日用品补货管理小程序",
   "scripts": {
     "pretest": "node scripts/sync-shared.js",
-    "test": "node --test test/*.test.js",
+    "test": "node --test test/*.test.js packages/*/test/*.test.js",
     "sync": "node scripts/sync-shared.js",
     "check": "node scripts/check-json.js",
     "verify": "npm run sync && npm run check && npm test",

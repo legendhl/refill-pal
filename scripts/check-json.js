@@ -127,14 +127,13 @@ notes.push(`检查了 ${componentRefs} 个组件引用`);
 
 // ---------------------------------------------------- 5. 云函数结构完整性
 
-const sharedSrc = path.join(CF, '_shared', 'core.js');
-const sharedSource = fs.existsSync(sharedSrc) ? fs.readFileSync(sharedSrc, 'utf8') : null;
-if (!sharedSource) fail('缺少 cloudfunctions/_shared/core.js');
+const { expectedCopies } = require('./sync-shared');
 
 const cfDirs = fs.existsSync(CF)
   ? fs.readdirSync(CF, { withFileTypes: true })
       .filter((d) => d.isDirectory() && !d.name.startsWith('_') && !d.name.startsWith('.'))
       .map((d) => d.name)
+      .filter((name) => fs.existsSync(path.join(CF, name, 'index.js')))
   : [];
 
 if (!cfDirs.length) warn('cloudfunctions 下还没有任何云函数目录');
@@ -151,43 +150,25 @@ cfDirs.forEach((name) => {
       if (!pkg.dependencies || !pkg.dependencies['wx-server-sdk']) {
         fail(`云函数 ${name} 的 package.json 未声明 wx-server-sdk 依赖`);
       }
-      if (pkg.dependencies && pkg.dependencies['wx-server-sdk'] && String(pkg.dependencies['wx-server-sdk']).indexOf('file:') === 0) {
+      const dep = pkg.dependencies && pkg.dependencies['wx-server-sdk'];
+      if (dep && String(dep).indexOf('file:') === 0) {
         fail(`云函数 ${name} 使用了 file: 依赖，会导致开发者工具上传失败`);
       }
     } catch (e) {
-      /* 已报错 */
+      /* 已在第 1 步报错 */
     }
-  }
-  // 定时触发器与 openapi 权限：写错了不会报错，只会「静默不触发」，所以静态查一遍
-  const cfgPath = path.join(dir, 'config.json');
-  if (fs.existsSync(cfgPath)) {
-    try {
-      const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
-      (cfg.triggers || []).forEach((trigger, i) => {
-        if (trigger.type !== 'timer') {
-          fail(`云函数 ${name} 的触发器 #${i + 1} 类型应为 timer，实际 ${trigger.type}`);
-          return;
-        }
-        const fields = String(trigger.config || '').trim().split(/\s+/);
-        if (fields.length !== 7) {
-          fail(`云函数 ${name} 的定时 cron 必须是 7 位（秒 分 时 日 月 周 年），实际 ${fields.length} 位：${trigger.config}`);
-        }
-      });
-      if (cfg.permissions && cfg.permissions.openapi && !Array.isArray(cfg.permissions.openapi)) {
-        fail(`云函数 ${name} 的 permissions.openapi 必须是数组`);
-      }
-    } catch (e) {
-      fail(`云函数 ${name} 的 config.json 解析失败: ${e.message}`);
-    }
-  }
-
-  const sharedCopy = path.join(dir, 'shared', 'core.js');
-  if (!fs.existsSync(sharedCopy)) {
-    fail(`云函数 ${name} 缺少 shared/core.js，请先运行 npm run sync`);
-  } else if (sharedSource && fs.readFileSync(sharedCopy, 'utf8') !== sharedSource) {
-    fail(`云函数 ${name}/shared/core.js 与 _shared/core.js 不一致，请运行 npm run sync`);
   }
 });
+
+// 生成物必须与 packages/refillpal-core/src 完全一致，否则线上跑的是旧代码
+expectedCopies().forEach(({ dest, rel, content }) => {
+  if (!fs.existsSync(dest)) {
+    fail(`缺少生成文件：${rel}（先运行 npm run sync）`);
+  } else if (fs.readFileSync(dest, 'utf8') !== content) {
+    fail(`生成文件与 packages/refillpal-core/src 不一致：${rel}（先运行 npm run sync）`);
+  }
+});
+
 notes.push(`检查了 ${cfDirs.length} 个云函数`);
 
 // ---------------------------------------------------- 6. 所有 JS 语法可编译

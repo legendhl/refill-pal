@@ -11,8 +11,8 @@
  * 这个文件是纯逻辑（数据库与发送函数都是注入的），所以可以完整单测。
  */
 
-const core = require('./shared/core');
-const kit = require('./shared/kit');
+const core = require('./shared/algorithms/core');
+const kit = require('./shared/server/kit');
 
 /**
  * 微信推送总开关（与 miniprogram/config.js 的 PUSH_ENABLED 保持一致）。

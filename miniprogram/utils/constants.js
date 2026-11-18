@@ -1,3 +1,7 @@
+/* 自动生成，请勿直接修改。
+ * 源文件：packages/refillpal-core/src/view/constants.js
+ * 由 npm run sync 同步；要改请改源文件后重新同步。
+ */
 /** 全局常量：分类、单位、渠道、紧急度分级 */
 
 const CATEGORIES = [

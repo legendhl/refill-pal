@@ -6,7 +6,7 @@
  */
 
 const cloud = require('wx-server-sdk');
-const kit = require('./shared/kit');
+const kit = require('./shared/server/kit');
 const { handlers } = require('./app');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });

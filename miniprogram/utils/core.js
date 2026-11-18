@@ -1,6 +1,6 @@
-/* 由 scripts/sync-shared.js 自动生成，请勿直接修改。
- * 源文件：cloudfunctions/_shared/core.js
- * 小程序端仅 utils/mock.js（演示模式）使用；真实模式下库存一律由云端算好下发。
+/* 自动生成，请勿直接修改。
+ * 源文件：packages/refillpal-core/src/algorithms/core.js
+ * 由 npm run sync 同步；要改请改源文件后重新同步。
  */
 'use strict';
 
