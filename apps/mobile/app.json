@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "补货小管家",
+    "slug": "refillpal",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "refillpal",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.refillpal.app"
+    },
+    "android": {
+      "package": "com.refillpal.app",
+      "permissions": ["POST_NOTIFICATIONS"]
+    },
+    "plugins": ["expo-notifications", "expo-secure-store"],
+    "extra": {}
+  }
+}

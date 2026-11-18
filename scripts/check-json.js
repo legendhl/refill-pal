@@ -254,6 +254,37 @@ wxmlFiles.forEach((file) => {
 });
 notes.push(`检查了 ${wxmlFiles.length} 个 WXML 的标签配对`);
 
+// ---------------------------------------------------- 6.6 JSX 语法编译检查
+
+/**
+ * 移动端（React Native）用 .jsx，node 的 vm 无法解析 JSX，
+ * 所以单独用 @babel/parser 编译一遍。没装就跳过并提示。
+ */
+const jsxFiles = walk(ROOT, (f) => f.endsWith('.jsx'));
+if (jsxFiles.length) {
+  let babelParser = null;
+  try {
+    // eslint-disable-next-line global-require
+    babelParser = require('@babel/parser');
+  } catch (e) {
+    warn('未安装 @babel/parser，跳过 JSX 语法检查（npm i 后可用）');
+  }
+  if (babelParser) {
+    jsxFiles.forEach((file) => {
+      try {
+        babelParser.parse(fs.readFileSync(file, 'utf8'), {
+          sourceType: 'module',
+          plugins: ['jsx'],
+          errorRecovery: false
+        });
+      } catch (e) {
+        fail(`JSX 语法错误: ${path.relative(ROOT, file)} → ${e.message}`);
+      }
+    });
+    notes.push(`编译检查了 ${jsxFiles.length} 个 JSX 文件`);
+  }
+}
+
 // ---------------------------------------------------- 7. 部署占位符是否还留着
 
 const configPath = path.join(MP, 'config.js');
