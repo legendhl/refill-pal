@@ -285,6 +285,33 @@ if (jsxFiles.length) {
   }
 }
 
+// ---------------------------------------------------- 6.7 相对路径 require 必须存在
+
+/**
+ * JS/JSX 里的相对 require 拼错时，只有真跑起来才会发现。
+ * 这里静态解析一遍，覆盖 .js/.jsx/.json 三种扩展名。
+ */
+const REL_REQUIRE = /require\(\s*['"]((?:\.\.?\/)[^'"]+)['"]\s*\)/g;
+const codeFiles = walk(ROOT, (f) => (f.endsWith('.js') || f.endsWith('.jsx')) && f.indexOf('node_modules') < 0);
+let requireChecked = 0;
+
+codeFiles.forEach((file) => {
+  const source = fs.readFileSync(file, 'utf8');
+  REL_REQUIRE.lastIndex = 0;
+  let m = REL_REQUIRE.exec(source);
+  while (m) {
+    const spec = m[1];
+    const base = path.resolve(path.dirname(file), spec);
+    const candidates = [base, `${base}.js`, `${base}.jsx`, `${base}.json`, path.join(base, 'index.js')];
+    requireChecked += 1;
+    if (!candidates.some((c) => fs.existsSync(c))) {
+      fail(`相对路径 require 不存在: ${path.relative(ROOT, file)} → ${spec}`);
+    }
+    m = REL_REQUIRE.exec(source);
+  }
+});
+notes.push(`校验了 ${requireChecked} 个相对路径 require`);
+
 // ---------------------------------------------------- 7. 部署占位符是否还留着
 
 const configPath = path.join(MP, 'config.js');

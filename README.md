@@ -2,135 +2,149 @@
 
 家里的日用品什么时候该买，它替你记着。
 
-记一笔买了什么，它学会你的消耗速度，在快用完的时候用微信提醒你。
+记一笔买了什么，它学会你的消耗速度，在快用完的时候提醒你。
+
+一期有**三个端**，共用同一份算法：
+
+| 端 | 技术 | 状态 |
+| --- | --- | --- |
+| 微信小程序 | 原生 + 微信云开发 | 已完成，可发布 |
+| Android / iOS | React Native + Expo | 已完成代码，待真机验证 |
+| 自建服务端 | Node（零依赖）+ SQLite | 已完成，可部署 |
 
 ---
 
 ## 它能做什么
 
-- **3 秒记一笔**：首页右下角常驻按钮 → 弹出你家常用物品宫格 → 点一下就记上。买完顺手记，不用填表。
+- **3 秒记一笔**：打开就是「该买了」，点一下就记上。买完顺手记，不用填表。
 - **自己学会消耗速度**：记两次购买它就知道了，记三次就准了。不靠你手填周期。
 - **盘点校准**：说一句「其实还剩 3 包」，它立刻修正预测，并且这次的盘点会成为最准的估算依据。
-- **该买的时候提醒**：每天一条汇总推到微信，不逐条轰炸。没有要买的时候一句都不说。
-- **家人共享**：谁买了都记在同一本账上，提醒也只提醒一次。邀请码一发就能加入。
-- **算得清花了多少**：本月开支、花在哪、在哪买的、照这个用法一个月大概要花多少。
+- **该买的时候提醒**：App 用本地通知（不需要推送服务），小程序用订阅消息。
+- **家人共享**：谁买了都记在同一本账上。邀请码一发就能加入。
+- **算得清花了多少**：本月开支、花在哪、照这个用法一个月大概要花多少。
 
 ## 它和其他记账 App 的区别
 
 记账 App 记录「已经花了多少」，它回答「还要花多少、什么时候花」。
 后一个问题需要知道**你家的消耗速度**——所以它记的是「买了多少、用了多久」，而不是单纯的金额。
 
-## 快速开始（不用任何配置）
-
-```bash
-git clone <本项目>
-cd refillPal
-npm run verify        # 同步共享代码 + 结构校验 + 全部测试
-```
-
-然后用微信开发者工具「导入项目」，选到本目录。
-
-`miniprogram/config.js` 里 `USE_MOCK` 默认是 `true`：你会看到一个带示例数据的完整可点版本，
-不需要 AppID、不需要云开发。想接上真实云端，看 **[docs/deploy.md](docs/deploy.md)**。
-
 ## 项目结构
 
 ```
 refillPal/
-├── miniprogram/                 小程序端
-│   ├── config.js                ★ 部署时唯一需要改的文件（环境 ID、模板 ID、USE_MOCK）
-│   ├── pages/                   9 个页面
-│   ├── components/              item-card / empty-state
-│   └── utils/
-│       ├── api.js               云函数调用封装（统一 {ok, data, code, message}）
-│       ├── viewmodel.js         所有排序/文案/配色（纯函数，可离线断言）
-│       ├── format.js            日期与金额格式化
-│       ├── undo.js              记一笔之后的 5 秒撤销窗口
-│       ├── mock.js              演示模式数据层
-│       └── core.js              ← 自动生成，仅供演示模式
-├── cloudfunctions/              云端
-│   ├── _shared/                 ★ 唯一事实来源
-│   │   ├── core.js              所有算法（速率估算、库存重放、预测、统计、推送文案）
-│   │   └── kit.js               云端公共工具（归属校验、分页、输入校验）
-│   ├── family/ item/ purchase/ dashboard/ stats/
-│   └── notify/                  定时汇总推送（含定时触发器配置）
-├── test/                        203 个自动化测试
-├── test-utils/                  测试夹具（伪数据库、wx 桩、小程序运行时）
-├── scripts/
-│   ├── sync-shared.js           把 _shared 复制到各云函数
-│   └── check-json.js            结构 + JS 语法 + 定时触发器校验
+├── packages/refillpal-core/      ★ 三端唯一源码（零依赖、零 I/O）
+│   ├── src/algorithms/core.js    速率估算、事件溯源重放、预测、统计、推送文案
+│   ├── src/view/                 视图模型：排序/文案/配色（小程序与 App 共用）
+│   ├── src/contract/             action 唯一登记处 + 形状断言
+│   ├── src/server/kit.js         服务端公共工具（归属校验、分页、输入校验、统一入口）
+│   ├── src/server/handlers/      family / item / purchase / dashboard / stats
+│   └── test/                     算法与视图模型测试
+├── server/                       ★ 自建服务端（零运行时依赖）
+│   ├── src/db/sqlite-repo.js     实现与云数据库同名的链式 API
+│   ├── src/auth/                 scrypt 密码哈希 + 自签 JWT
+│   ├── src/app.js                node:http 路由，身份注入 handler
+│   ├── src/main.js               入口
+│   └── scripts/backup.js         VACUUM INTO 备份（可恢复）
+├── apps/mobile/                  ★ React Native + Expo
+│   ├── App.jsx                   会话门 + 四个 Tab
+│   ├── src/api/client.js         接口封装（与服务端同一套 {ok,data} 契约）
+│   ├── src/state/store.js        会话 + 数据 + 提醒排程（不依赖 React，可测）
+│   ├── src/notifications/        本地通知排程（纯逻辑 + expo 胶水）
+│   └── src/screens/              登录/引导/待补货/物品/详情/统计/我的
+├── miniprogram/                  微信小程序（页面与组件）
+├── cloudfunctions/               微信云函数（app.js 转发到 packages 的 handler）
+├── test/                         云函数集成、小程序页面、mock、notify 测试
+├── test-utils/                   伪数据库、wx 桩、小程序运行时
+├── scripts/                      sync-shared / check-json / release-check
 └── docs/
-    ├── deploy.md                ★ 部署手册（含真机验收清单）
-    └── plans/                   设计文档与实施计划
+    ├── deploy.md                 ★ 小程序部署手册
+    ├── deploy-server.md          ★ 服务端部署手册（含备份与恢复）
+    └── plans/                    设计与实施文档
 ```
 
 ## 开发命令
 
 | 命令 | 作用 |
 | --- | --- |
-| `npm test` | 跑全部测试（会自动先 sync） |
-| `npm run check` | 结构校验：页面完整性、组件路径、JS 语法、WXML 配对、定时触发器、推送总开关一致性 |
+| `npm test` | 跑全部测试（288 个，跨三端） |
+| `npm run check` | 结构校验：页面完整性、组件路径、JS 语法、JSX 语法、WXML 配对、生成物是否最新 |
 | `npm run verify` | sync + check + test，提交前跑这个 |
-| `npm run sync` | 把 `cloudfunctions/_shared/` 复制到各云函数（改了共享代码后必跑） |
-| `npm run release-check` | 发布前自检：占位符、演示模式、推送开关、云函数同步、包体积 |
-| `node test-utils/e2e-screenshots.js` | 驱动微信开发者工具跑一遍真机模拟器并截图（需要开启工具的服务端口） |
+| `npm run sync` | 把 `packages/refillpal-core/src` 同步到云函数与小程序（改了共享代码后必跑） |
+| `npm run server` | 启动自建服务端（需要环境变量） |
+| `npm run release-check` | 小程序发布前自检 |
+| `node test-utils/e2e-screenshots.js` | 驱动开发者工具跑小程序模拟器并截图 |
 
-## 微信推送总开关
+## 三端怎么跑
 
-`config.js` 里的 `PUSH_ENABLED` 默认是 **false**：整块订阅消息功能是收起来的 ——
-首页不出现续订提示，「提醒设置」里也不显示推送时间/预览/续订，云函数不会发消息。
-**首页的「该买了」清单照常工作**，因为「提前几天提醒我」决定的是 App 内清单的时机，与推送无关。
+### 微信小程序（演示模式，零配置）
 
-打开方式（两处必须同时改，`npm run check` 会校验一致性）：
+用微信开发者工具「导入项目」选到本目录即可，`miniprogram/config.js` 的 `USE_MOCK` 默认 `true`。
+接真实云端见 [docs/deploy.md](docs/deploy.md)。
 
-1. `miniprogram/config.js` → `PUSH_ENABLED: true`
-2. `cloudfunctions/notify/app.js` → `const PUSH_ENABLED = true;`
-3. 按 `docs/deploy.md` 第 5 步申请订阅消息模板并填 `SUBSCRIBE_TEMPLATE_ID`
+### 自建服务端
+
+```bash
+PORT=3000 DB_FILE=./data/refillpal.db JWT_SECRET=$(openssl rand -hex 32) \
+  node server/src/main.js
+
+curl http://127.0.0.1:3000/api/health
+```
+
+零依赖，不需要 `npm install`。生产部署（systemd / Caddy / 备份 / 恢复）见
+[docs/deploy-server.md](docs/deploy-server.md)。
+
+### 移动端
+
+```bash
+cd apps/mobile
+npm install                     # 首次
+EXPO_PUBLIC_API_BASE_URL=http://192.168.1.10:3000 npx expo start
+```
+
+用 Expo Go 扫码即可在手机上跑。`EXPO_PUBLIC_API_BASE_URL` 指向服务端
+（开发期用局域网 IP，正式用已备案的 HTTPS 域名）。
 
 ## 两个关键设计
 
 ### 1. 库存是「算」出来的，不是「存」出来的
 
-`items` 集合里只存一个不可变的初始基准（`baseAt` / `baseQty`），
-当前库存由全部流水**重放**得出（`core.replayEvents`）。
+`items` 只存一个不可变的初始基准（`baseAt` / `baseQty`），当前库存由全部流水**重放**得出
+（`core.replayEvents`）。撤销、补录、改错、删除记录之后，库存永远和流水一致，
+不存在「缓存与事实分叉」。这是实施过程中把原设计推翻重做的一次修正。
 
-好处是：撤销、补录历史、改错数量、删除记录之后，库存永远和流水一致，
-不存在「缓存里存的库存」和「实际流水」对不上的状态。这是实施过程中把原设计推翻重做的一次修正。
+### 2. 身份是注入的，不是写死的
 
-### 2. 数据全部经过云函数
+`kit.createHandler` 从 `deps.getOpenId()` 拿身份，于是同一份 handler 能挂到两个入口：
 
-小程序端不直连数据库，所有读写走云函数；云函数里的 `familyId` 一律由 openid 反查得到，
-**从不读取客户端传来的 familyId**。所以「家人共享」和「越权访问别人家数据」这两个问题
-用同一套机制解决，`test/cloud-functions.test.js` 里有针对性的越权测试。
+- 小程序：`cloud.getWXContext().OPENID` → `identityKey = 微信 openid`
+- 自建服务端：JWT 解析出 `user:<id>` → `identityKey = "user:..."`
+
+`familyId` 一律由 identity 反查，**从不读取客户端传来的 familyId**。
+所以「家人共享」和「越权访问别人家数据」用同一套机制解决，两个入口都有越权测试。
 
 ## 测试
 
-203 个测试，分四层：
+288 个测试，分五层：
 
-| 文件 | 覆盖 |
+| 位置 | 覆盖 |
 | --- | --- |
-| `test/core.test.js` | 算法：速率估算、离群截断、盘点校准、锚点结算、预测分级、统计 |
-| `test/cloud-functions.test.js` | 云函数：归属安全、家庭共享、事件溯源、输入校验 |
-| `test/notify.test.js` | 定时推送：幂等、额度、拒收、模板错误、时区 |
-| `test/viewmodel.test.js` `test/format.test.js` `test/undo.test.js` `test/mock.test.js` | 客户端工具层 |
-| `test/pages.test.js` | 页面：WXML 绑定与字段必须存在 + 完整交互流程 |
+| `packages/refillpal-core/test/core.test.js` | 算法：速率估算、离群截断、盘点校准、锚点结算、预测分级、统计 |
+| `packages/refillpal-core/test/{viewmodel,format,undo,contract}.test.js` | 视图模型、格式化、撤销队列、契约一致性 |
+| `server/test/` | Repository 语义、密码/JWT、端到端 HTTP、备份与恢复 |
+| `test/cloud-functions.test.js` `test/notify.test.js` | 云函数：归属安全、家庭共享、推送幂等与额度 |
+| `test/pages.test.js` | 小程序页面：WXML 绑定与字段必须存在 + 完整交互流程 |
+| `apps/mobile/test/` | API 客户端、提醒排程、导航栈，以及「App → 服务端 → SQLite」整链集成 |
 
-`test/pages.test.js` 会把 Node 当成小程序运行环境（注入 `wx` / `Page` / `getApp` 桩），
-真的执行页面逻辑。它拦下过两个真 bug：归档物品的详情页误报「找不到物品」、撤销后宫格库存不同步。
+两处「把运行时搬进 Node」的做法值得说明：
 
-## 从真机测试到发布
+- `test/pages.test.js` 注入 `wx`/`Page`/`getApp` 桩，真的执行小程序页面逻辑；
+- `apps/mobile/test/store.test.js` 起一个真实的 HTTP 服务，移动端 store 直接打过去。
 
-三个阶段要求递增，**备案只影响发布，不卡真机调试和体验版**：
-
-1. **真机调试 / 预览**：填好 AppID + 云开发配好 + 上传云函数，扫码即可
-2. **体验版**：多一步上传并设为体验版，家人需要被加为体验成员
-3. **正式版**：还需要备案 + 服务类目 + 用户隐私保护指引 + 提交审核
-
-上传前先跑 `npm run release-check`。平台侧还要做的事见 [docs/deploy.md](docs/deploy.md) 的「从真机测试走到正式发布」。
+它们拦下过真 bug：归档物品详情误报「找不到物品」、撤销后宫格库存不同步、模板 ID 没上报导致推送发不出。
 
 ## 已知限制
 
-- **提醒次数需要续订**：微信规定订阅消息「一次授权 = 一条」。所以一天一条汇总，额度低了首页会提示续订。
-  长期订阅只对政务民生等少数类目开放，家居工具类申请不到。
-- **盘点才能更准**：只靠购买间隔会被「囤货」干扰，盘点能排除它。所以详情页把「盘点」做成了和「用完了」同等显眼。
+- **小程序推送需要续订**：微信规定订阅消息「一次授权 = 一条」。App 端的本地通知没有这个限制。
+- **App 提醒需要打开过一次**：本地通知要 App 至少启动一次才能排程，一次排未来 30 天。
+- **盘点才能更准**：只靠购买间隔会被「囤货」干扰。所以详情页把「盘点」做成了和「用完了」同等显眼。
 - **预估永远带不确定性**：界面如实显示「估算中 / 粗略估计 / 较准」，不假装精确。
